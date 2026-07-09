@@ -3,6 +3,8 @@ import type { Countdowns, MonthlyResponse, QiblaData } from "@/lib/miqaat";
 import type { SpecialType } from "@/lib/calendar";
 import type { StudioState } from "@/lib/state";
 import type { ThemeTokens } from "./themes";
+import { PersonalDaily } from "./daily/PersonalDaily";
+import { OrgDaily } from "./daily/OrgDaily";
 
 export type TemplateProps = {
   monthly: MonthlyResponse;
@@ -22,10 +24,9 @@ export type TemplateDef = {
   thumbnail?: string;
 };
 
-// Stub components — real templates land in Tasks 10-12. These placeholders
+// Stub components — real templates land in Tasks 11-12. These placeholders
 // exist purely so the registry/format filters have at least one entry per
 // format and the lane filter has something to narrow.
-const StubDaily: React.FC<TemplateProps> = () => null;
 const StubMonthly: React.FC<TemplateProps> = () => null;
 const StubMonthlyOrg: React.FC<TemplateProps> = () => null;
 const StubYear: React.FC<TemplateProps> = () => null;
@@ -36,7 +37,14 @@ export const TEMPLATES: TemplateDef[] = [
     name: "Daily Classic",
     lane: "personal",
     format: "daily",
-    Component: StubDaily,
+    Component: PersonalDaily,
+  },
+  {
+    id: "daily-org",
+    name: "Daily Masjid Schedule",
+    lane: "organization",
+    format: "daily",
+    Component: OrgDaily,
   },
   {
     id: "monthly-classic",

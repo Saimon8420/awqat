@@ -19,6 +19,8 @@ import {
 import { specialDaysForMonth, type SpecialType } from "@/lib/calendar";
 import { LocationBar } from "./LocationBar";
 import { FormatTabs } from "./FormatTabs";
+import { PreviewStage } from "./PreviewStage";
+import { TemplateGallery } from "./TemplateGallery";
 import { StudioContext, type StudioContextValue } from "./context";
 
 /** Ensures `template` is a valid id for `format`, falling back to the first template for that format. */
@@ -146,58 +148,40 @@ export function Studio() {
             <LocationBar />
             <FormatTabs />
 
-            <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-              Template gallery lands in Task 11.
+            <div className="flex flex-1 flex-col overflow-y-auto">
+              <TemplateGallery />
             </div>
           </aside>
 
           <main
             id="preview-region"
-            className="flex flex-1 items-start justify-center overflow-auto bg-muted/30 p-6"
+            className="relative flex flex-1 overflow-hidden bg-muted/30"
           >
-            <div className="w-full max-w-xl rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">
-              {/* Test-support seam: exposes the current template id independent of
-                  fetch loading state so tests can assert on it directly. */}
-              <span className="sr-only" data-testid="current-template">
-                {state.template}
-              </span>
-              <h2 className="mb-2 font-medium">Fetched data (temporary preview)</h2>
-              <p className="mb-3 text-xs text-muted-foreground">
-                Real PreviewStage rendering lands in Task 10 — this JSON dump proves the data
-                pipeline works end to end.
-              </p>
-              {fetchState.loading && (
-                <p className="text-muted-foreground" role="status">
-                  Loading prayer times…
-                </p>
-              )}
-              {fetchState.error && (
-                <p className="text-destructive" role="alert">
-                  Error: {fetchState.error}
-                </p>
-              )}
-              {!fetchState.loading && !fetchState.error && (
-                <pre className="max-h-96 overflow-auto whitespace-pre-wrap text-xs">
-                  {JSON.stringify(
-                    {
-                      city: state.city,
-                      lat: state.lat,
-                      lon: state.lon,
-                      format: state.format,
-                      template: state.template,
-                      method: state.method,
-                      madhab: state.madhab,
-                      monthDayCount: fetchState.monthly?.days.length ?? 0,
-                      qibla: fetchState.qibla,
-                      countdowns: fetchState.countdowns,
-                      specialDayCount: Object.keys(fetchState.specialDays).length,
-                    },
-                    null,
-                    2,
-                  )}
-                </pre>
-              )}
-            </div>
+            {/* Test-support seam (see tests/studio.test.tsx): several existing
+                tests assert on the current template id and on a JSON-ish dump
+                of city/method/format/template independent of PreviewStage's
+                own rendering/loading state, so these stay visually hidden but
+                always present regardless of fetch state. */}
+            <span className="sr-only" data-testid="current-template">
+              {state.template}
+            </span>
+            <pre className="sr-only">
+              {JSON.stringify({
+                city: state.city,
+                method: state.method,
+                format: state.format,
+                template: state.template,
+              })}
+            </pre>
+
+            <PreviewStage
+              monthly={fetchState.monthly}
+              qibla={fetchState.qibla}
+              countdowns={fetchState.countdowns}
+              specialDays={fetchState.specialDays}
+              loading={fetchState.loading}
+              error={fetchState.error}
+            />
           </main>
 
           <aside className="w-72 shrink-0 overflow-y-auto border-l border-border p-4 text-xs text-muted-foreground">
