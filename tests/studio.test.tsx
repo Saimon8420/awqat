@@ -97,7 +97,10 @@ describe("Studio", () => {
       { id: "Egyptian", name: "Egyptian" },
     ]);
     // Both results resolve from a single debounced search fired automatically
-    // for the default city query ("Dhaka") on mount. Re-focusing the input
+    // for the default city query ("Dhaka") on mount. The results dropdown
+    // only opens once the user has interacted with the field (see
+    // LocationBar's `interactedRef` — it must not auto-open for the
+    // prefilled city), so this focuses the field first; re-focusing it later
     // re-opens the already-fetched result list, letting the test select a
     // second, different city.
     vi.mocked(searchCity).mockResolvedValue([
@@ -108,6 +111,7 @@ describe("Studio", () => {
     render(<Studio />);
     const main = screen.getByRole("main");
     const locationInput = screen.getByLabelText("Location");
+    fireEvent.focus(locationInput);
 
     // Selecting the first city (no override yet) derives the method from the
     // city's country via defaultMethod().

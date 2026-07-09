@@ -43,6 +43,15 @@ export function LocationBar() {
   const [methodsError, setMethodsError] = useState<string | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Whether the user has actually interacted with the field this session
+  // (typed or focused it) — as opposed to `query`'s initial value just being
+  // the pre-filled `state.city`. Gates the debounced-search effect's
+  // `setResultsOpen(true)` below so the results dropdown doesn't pop open on
+  // mount for the prefilled city; it should only appear once the user is
+  // actually looking at/using the field. A ref (not state) so the search
+  // effect's async `.then` callback always reads the latest value without
+  // needing to be a dependency.
+  const interactedRef = useRef(false);
 
   useEffect(() => {
     getMethods()
@@ -66,7 +75,7 @@ export function LocationBar() {
       searchCity(q)
         .then((found) => {
           setResults(found);
-          setResultsOpen(found.length > 0);
+          if (interactedRef.current) setResultsOpen(found.length > 0);
         })
         .catch((err: unknown) => {
           setSearchError(err instanceof Error ? err.message : String(err));
@@ -128,8 +137,12 @@ export function LocationBar() {
           role="combobox"
           aria-expanded={resultsOpen}
           aria-autocomplete="list"
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            interactedRef.current = true;
+            setQuery(e.target.value);
+          }}
           onFocus={() => {
+            interactedRef.current = true;
             if (results.length > 0 || searching || searchError) setResultsOpen(true);
           }}
           onBlur={() => setResultsOpen(false)}
@@ -157,7 +170,7 @@ export function LocationBar() {
                   type="button"
                   role="option"
                   aria-selected={false}
-                  className="flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                  className="flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() => selectCity(r)}
                 >
                   <span>{r.name}</span>

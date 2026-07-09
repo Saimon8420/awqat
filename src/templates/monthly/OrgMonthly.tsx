@@ -4,6 +4,7 @@ import { dir, label, toNumerals } from "@/lib/i18n";
 import { dayLabel } from "@/lib/calendar";
 import { cn } from "@/lib/utils";
 import { DecorLayer } from "@/graphics/DecorLayer";
+import { MethodCaption } from "../MethodCaption";
 import type { TemplateProps } from "../registry";
 import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS } from "../shared";
 
@@ -31,7 +32,7 @@ export function OrgMonthly({ monthly, state, theme }: TemplateProps) {
 
   return (
     <div dir={dir(lang)} className={cn("flex h-full w-full flex-col", LANG_FONT_CLASS[lang])} style={rootStyle}>
-      <DecorLayer state={state} theme={theme} />
+      <DecorLayer state={state} theme={theme} accent={accent} />
       <div className="h-3 w-full" style={{ backgroundColor: accent }} />
 
       <div className="flex flex-1 flex-col p-8">
@@ -121,9 +122,12 @@ export function OrgMonthly({ monthly, state, theme }: TemplateProps) {
           </table>
         )}
 
-        <p className="mt-2 text-center text-xs opacity-60">
-          Method: {monthly.method} · {monthly.madhab}
-        </p>
+        <MethodCaption
+          method={monthly.method}
+          madhab={monthly.madhab}
+          lang={lang}
+          className="mt-2 text-xs"
+        />
       </div>
     </div>
   );

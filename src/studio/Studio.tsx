@@ -17,6 +17,7 @@ import {
   type QiblaData,
 } from "@/lib/miqaat";
 import { isRamadanMonth, specialDaysForMonth, type SpecialType } from "@/lib/calendar";
+import { dir } from "@/lib/i18n";
 import { LocationBar } from "./LocationBar";
 import { FormatTabs } from "./FormatTabs";
 import { DateControls } from "./DateControls";
@@ -235,9 +236,9 @@ export function Studio() {
 
   return (
     <StudioContext.Provider value={ctxValue}>
-      <div className="flex h-svh flex-col bg-background text-foreground">
-        <div className="flex flex-1 overflow-hidden">
-          <aside className="flex w-80 shrink-0 flex-col gap-4 overflow-y-auto border-r border-border bg-sidebar p-4">
+      <div className="flex h-svh flex-col overflow-x-hidden bg-background text-foreground">
+        <div className="flex flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
+          <aside className="flex w-full shrink-0 flex-col gap-4 overflow-y-auto border-b border-border bg-sidebar p-4 lg:w-80 lg:border-b-0 lg:border-r">
             <div>
               <h1 className="text-lg font-semibold text-sidebar-foreground">Awqat Studio</h1>
               <p className="text-xs text-muted-foreground">
@@ -256,7 +257,9 @@ export function Studio() {
 
           <main
             id="preview-region"
-            className="relative flex flex-1 overflow-hidden bg-muted/30"
+            className="relative flex min-h-[60vh] flex-1 overflow-hidden bg-muted/30 lg:min-h-0"
+            lang={state.lang}
+            dir={dir(state.lang)}
           >
             {/* Test-support seam (see tests/studio.test.tsx): several existing
                 tests assert on the current template id and on a JSON-ish dump
@@ -286,12 +289,54 @@ export function Studio() {
             />
           </main>
 
-          <aside className="w-72 shrink-0 overflow-y-auto border-l border-border p-4">
+          <aside className="w-full shrink-0 overflow-y-auto border-t border-border p-4 lg:w-72 lg:border-t-0 lg:border-l">
             <CustomizePanel />
           </aside>
         </div>
 
         <ExportBar />
+
+        <div className="flex shrink-0 flex-col gap-1 border-t border-border bg-muted/20 px-4 py-2 text-xs text-muted-foreground">
+          <p>
+            Times are computed from the Miqaat API — verify with your local authority before
+            relying on them for worship.
+          </p>
+          <footer className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>Built on the same toolkit:</span>
+            <a
+              href="https://miqaat-dev.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-dotted underline-offset-2 hover:text-foreground"
+            >
+              Miqaat API
+            </a>
+            <a
+              href="https://swelter-dev.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-dotted underline-offset-2 hover:text-foreground"
+            >
+              Swelter
+            </a>
+            <a
+              href="https://declino.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-dotted underline-offset-2 hover:text-foreground"
+            >
+              Declino
+            </a>
+            <a
+              href="https://tessera-zeta-dev.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-dotted underline-offset-2 hover:text-foreground"
+            >
+              Tessera
+            </a>
+          </footer>
+        </div>
       </div>
     </StudioContext.Provider>
   );

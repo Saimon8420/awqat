@@ -131,7 +131,7 @@ export function CustomizePanel() {
                     key={hex}
                     type="button"
                     aria-label={`Accent ${hex}`}
-                    className="size-7 rounded-full border border-border transition-transform hover:scale-105"
+                    className="size-7 rounded-full border border-border outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover"
                     style={{ backgroundColor: hex }}
                     onClick={() => updateState({ accent: hex })}
                   />

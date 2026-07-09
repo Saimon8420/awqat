@@ -4,6 +4,7 @@ import { dir, label, toNumerals } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { DecorLayer } from "@/graphics/DecorLayer";
 import { QiblaCompass } from "@/graphics/QiblaCompass";
+import { MethodCaption } from "../MethodCaption";
 import type { TemplateProps } from "../registry";
 import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS, pickToday } from "./shared";
 
@@ -36,7 +37,7 @@ export function PersonalDaily({ monthly, qibla, state, theme }: TemplateProps) {
         )}
         style={rootStyle}
       >
-        <DecorLayer state={state} theme={theme} />
+        <DecorLayer state={state} theme={theme} accent={accent} />
         <p className="text-3xl opacity-70">No prayer times available for this location yet.</p>
       </div>
     );
@@ -55,7 +56,7 @@ export function PersonalDaily({ monthly, qibla, state, theme }: TemplateProps) {
       className={cn("flex h-full w-full flex-col justify-between p-16", LANG_FONT_CLASS[lang])}
       style={rootStyle}
     >
-      <DecorLayer state={state} theme={theme} />
+      <DecorLayer state={state} theme={theme} accent={accent} />
       <header className="flex flex-col gap-3">
         <p className="text-3xl font-medium opacity-80">{hijri}</p>
         <h1 className="text-7xl font-bold leading-tight">{state.city}</h1>
@@ -114,9 +115,7 @@ export function PersonalDaily({ monthly, qibla, state, theme }: TemplateProps) {
         </footer>
       )}
 
-      <p className="text-center text-xl opacity-60">
-        Method: {monthly.method} · {monthly.madhab}
-      </p>
+      <MethodCaption method={monthly.method} madhab={monthly.madhab} lang={lang} className="text-xl" />
     </div>
   );
 }

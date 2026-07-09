@@ -64,7 +64,7 @@ export function TemplateGallery() {
                   aria-pressed={state.template === t.id}
                   onClick={() => pickTemplate(t.id)}
                   className={cn(
-                    "flex flex-col items-center gap-1.5 rounded-lg border p-2 text-xs transition-colors",
+                    "flex flex-col items-center gap-1.5 rounded-lg border p-2 text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                     state.template === t.id
                       ? "border-primary bg-primary/10 text-foreground"
                       : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",

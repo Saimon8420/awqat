@@ -8,6 +8,7 @@ import { dir, label, toNumerals } from "@/lib/i18n";
 import { dayLabel, isRamadanMonth } from "@/lib/calendar";
 import { cn } from "@/lib/utils";
 import { DecorLayer } from "@/graphics/DecorLayer";
+import { MethodCaption } from "../MethodCaption";
 import { LANG_FONT_CLASS } from "../shared";
 
 const MONTH_COUNT = 12;
@@ -150,11 +151,8 @@ export function YearPoster({ state, theme, months }: TemplateProps) {
 
   const hijriSpan = months && months.length > 0 ? hijriYearSpan(months) : null;
   const firstMonth = months?.[0];
-  const methodCaption = firstMonth
-    ? `${firstMonth.method} · ${firstMonth.madhab}`
-    : state.method && state.madhab
-      ? `${state.method} · ${state.madhab}`
-      : null;
+  const captionMethod = firstMonth?.method ?? state.method;
+  const captionMadhab = firstMonth?.madhab ?? state.madhab;
 
   return (
     <div
@@ -162,7 +160,7 @@ export function YearPoster({ state, theme, months }: TemplateProps) {
       className={cn("flex h-full w-full flex-col p-8", LANG_FONT_CLASS[lang])}
       style={rootStyle}
     >
-      <DecorLayer state={state} theme={theme} />
+      <DecorLayer state={state} theme={theme} accent={accent} />
       <header className="mb-4 flex items-baseline justify-between">
         <div>
           <h1 className="text-3xl font-bold">
@@ -171,7 +169,14 @@ export function YearPoster({ state, theme, months }: TemplateProps) {
           {hijriSpan && <p className="text-sm opacity-70">{toNumerals(hijriSpan, numerals)}</p>}
         </div>
         <div className="text-right text-xs opacity-60">
-          {methodCaption && <p>{methodCaption}</p>}
+          {captionMethod && captionMadhab && (
+            <MethodCaption
+              method={captionMethod}
+              madhab={captionMadhab}
+              lang={lang}
+              className="text-right text-xs"
+            />
+          )}
           <p>
             {label("sehri", lang)} / {label("iftar", lang)} / {label("fajr", lang)} /{" "}
             {label("maghrib", lang)} · {label("ramadan", lang)} = accent border

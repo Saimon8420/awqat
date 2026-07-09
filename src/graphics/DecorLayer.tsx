@@ -7,6 +7,12 @@ import { GRADIENTS } from "./backgrounds";
 export type DecorLayerProps = {
   state: StudioState;
   theme: ThemeTokens;
+  /**
+   * The effective accent color (a template's `state.accent || theme.accent`)
+   * used to tint the motif watermark. Optional so existing/ad-hoc callers
+   * still work; falls back to `theme.accent` when omitted.
+   */
+  accent?: string;
 };
 
 const LAYER_STYLE: CSSProperties = {
@@ -33,10 +39,14 @@ const LAYER_STYLE: CSSProperties = {
  * captured by the export pipeline, and it's `pointer-events: none` so it
  * never captures clicks meant for the template/editor above it.
  */
-export function DecorLayer({ state, theme }: DecorLayerProps) {
+export function DecorLayer({ state, theme, accent }: DecorLayerProps) {
   const gradient = state.gradient ? GRADIENTS.find((g) => g.id === state.gradient) : undefined;
   const motif = state.motif ? MOTIFS.find((m) => m.id === state.motif) : undefined;
   const hasPhoto = Boolean(state.bgImage) && !gradient;
+  // The user's custom accent wins when set; otherwise fall back to the
+  // current theme's accent — same precedence templates use for everything
+  // else they tint with the effective accent.
+  const effectiveAccent = accent || state.accent || theme.accent;
 
   if (!gradient && !hasPhoto && !motif) return null;
 
@@ -57,7 +67,7 @@ export function DecorLayer({ state, theme }: DecorLayerProps) {
 
       {motif ? (
         <div className="absolute bottom-4 right-4 h-1/3 w-1/3" style={{ opacity: 0.16 }}>
-          <motif.Svg className="h-full w-full" color={theme.accent} />
+          <motif.Svg className="h-full w-full" color={effectiveAccent} />
         </div>
       ) : null}
     </div>

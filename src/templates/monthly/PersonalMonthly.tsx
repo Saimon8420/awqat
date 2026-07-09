@@ -4,6 +4,7 @@ import { dir, label, toNumerals } from "@/lib/i18n";
 import { dayLabel } from "@/lib/calendar";
 import { cn } from "@/lib/utils";
 import { DecorLayer } from "@/graphics/DecorLayer";
+import { MethodCaption } from "../MethodCaption";
 import type { TemplateProps } from "../registry";
 import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS } from "../shared";
 
@@ -35,7 +36,7 @@ export function PersonalMonthly({ monthly, state, theme }: TemplateProps) {
       className={cn("flex h-full w-full flex-col p-10", LANG_FONT_CLASS[lang])}
       style={rootStyle}
     >
-      <DecorLayer state={state} theme={theme} />
+      <DecorLayer state={state} theme={theme} accent={accent} />
       <header className="mb-4 flex items-baseline justify-between">
         <h1 className="text-4xl font-bold">{state.city}</h1>
         <p className="text-xl opacity-70">
@@ -97,9 +98,7 @@ export function PersonalMonthly({ monthly, state, theme }: TemplateProps) {
         </table>
       )}
 
-      <p className="mt-3 text-center text-sm opacity-60">
-        Method: {monthly.method} · {monthly.madhab}
-      </p>
+      <MethodCaption method={monthly.method} madhab={monthly.madhab} lang={lang} className="mt-3" />
     </div>
   );
 }
