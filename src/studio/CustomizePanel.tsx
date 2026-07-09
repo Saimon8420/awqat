@@ -59,7 +59,12 @@ export function CustomizePanel() {
   const { state, updateState } = useStudio();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const accentValue = HEX_RE.test(state.accent) ? state.accent : "#0f9d63";
+  const isCustomAccent = HEX_RE.test(state.accent);
+  const currentTheme = THEMES.find((t) => t.id === state.theme) ?? THEMES[0];
+  // The effective accent: the user's custom pick when set, otherwise the
+  // current theme's accent — never the raw (possibly bogus/legacy) string
+  // stored in state.accent.
+  const accentValue = isCustomAccent ? state.accent : currentTheme.accent;
 
   function handlePhotoUpload(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -113,7 +118,9 @@ export function CustomizePanel() {
               style={{ backgroundColor: accentValue }}
               aria-hidden="true"
             />
-            <span className="truncate">{state.accent}</span>
+            <span className="truncate">
+              {isCustomAccent ? accentValue : "Theme default"}
+            </span>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-56">
             <div className="flex flex-col gap-3">
@@ -141,6 +148,15 @@ export function CustomizePanel() {
                   className="h-8 w-12 cursor-pointer rounded-md border border-input bg-transparent p-0.5"
                 />
               </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="w-fit"
+                onClick={() => updateState({ accent: "" })}
+              >
+                Theme default
+              </Button>
             </div>
           </PopoverContent>
         </Popover>

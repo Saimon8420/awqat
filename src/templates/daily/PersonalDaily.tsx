@@ -13,8 +13,11 @@ import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS, pickToday } from "./s
  * an optional Qibla flourish, and an optional personal greeting/dua footer.
  */
 export function PersonalDaily({ monthly, qibla, state, theme }: TemplateProps) {
-  const { lang, hour12, showRows, showQibla, personal } = state;
+  const { lang, hour12, numerals, showRows, showQibla, personal } = state;
   const today = pickToday(monthly, state);
+  // The user's custom accent wins when set; otherwise fall back to the
+  // current theme's accent.
+  const accent = state.accent || theme.accent;
 
   const rootStyle: CSSProperties = {
     backgroundColor: theme.bg,
@@ -38,10 +41,11 @@ export function PersonalDaily({ monthly, qibla, state, theme }: TemplateProps) {
     );
   }
 
-  const fmt = (iso: string) => formatTime(iso, { hour12, lang, timezone: monthly.location.timezone });
-  const hijri = `${toNumerals(String(today.hijri.day), lang)} ${today.hijri.monthName} ${toNumerals(
+  const fmt = (iso: string) =>
+    formatTime(iso, { hour12, lang: numerals, timezone: monthly.location.timezone });
+  const hijri = `${toNumerals(String(today.hijri.day), numerals)} ${today.hijri.monthName} ${toNumerals(
     String(today.hijri.year),
-    lang,
+    numerals,
   )} AH`;
 
   return (
@@ -64,7 +68,7 @@ export function PersonalDaily({ monthly, qibla, state, theme }: TemplateProps) {
           <p className="text-2xl font-medium uppercase tracking-wide opacity-80">
             {label("sehri", lang)}
           </p>
-          <p className="text-6xl font-bold" style={{ color: theme.accent }}>
+          <p className="text-6xl font-bold" style={{ color: accent }}>
             {fmt(today.fasting.sehri)}
           </p>
         </div>
@@ -75,7 +79,7 @@ export function PersonalDaily({ monthly, qibla, state, theme }: TemplateProps) {
           <p className="text-2xl font-medium uppercase tracking-wide opacity-80">
             {label("iftar", lang)}
           </p>
-          <p className="text-6xl font-bold" style={{ color: theme.accent }}>
+          <p className="text-6xl font-bold" style={{ color: accent }}>
             {fmt(today.fasting.iftar)}
           </p>
         </div>
@@ -93,10 +97,10 @@ export function PersonalDaily({ monthly, qibla, state, theme }: TemplateProps) {
       {showQibla && qibla && (
         <section
           className="flex items-center justify-center gap-3 rounded-2xl py-4 text-center"
-          style={{ borderColor: theme.accent, borderWidth: 2, borderStyle: "solid" }}
+          style={{ borderColor: accent, borderWidth: 2, borderStyle: "solid" }}
         >
-          <p className="text-2xl font-medium" style={{ color: theme.accent }}>
-            {label("qibla", lang)}: {toNumerals(String(Math.round(qibla.bearing)), lang)}°
+          <p className="text-2xl font-medium" style={{ color: accent }}>
+            {label("qibla", lang)}: {toNumerals(String(Math.round(qibla.bearing)), numerals)}°
           </p>
         </section>
       )}

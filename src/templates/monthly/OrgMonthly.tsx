@@ -15,10 +15,13 @@ import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS } from "../shared";
  * page.
  */
 export function OrgMonthly({ monthly, state, theme }: TemplateProps) {
-  const { lang, hour12, showRows, org } = state;
+  const { lang, hour12, numerals, showRows, org } = state;
   const rows = PRAYER_ROW_KEYS.filter((key) => showRows[key] !== false);
   const fmt = (iso: string) =>
-    formatTime(iso, { hour12, lang, timezone: monthly.location.timezone });
+    formatTime(iso, { hour12, lang: numerals, timezone: monthly.location.timezone });
+  // The user's custom accent wins when set; otherwise fall back to the
+  // current theme's accent.
+  const accent = state.accent || theme.accent;
 
   const rootStyle: CSSProperties = {
     backgroundColor: theme.bg,
@@ -29,7 +32,7 @@ export function OrgMonthly({ monthly, state, theme }: TemplateProps) {
   return (
     <div dir={dir(lang)} className={cn("flex h-full w-full flex-col", LANG_FONT_CLASS[lang])} style={rootStyle}>
       <DecorLayer state={state} theme={theme} />
-      <div className="h-3 w-full" style={{ backgroundColor: theme.accent }} />
+      <div className="h-3 w-full" style={{ backgroundColor: accent }} />
 
       <div className="flex flex-1 flex-col p-8">
         <header className="mb-3 flex items-center justify-between gap-4">
@@ -44,7 +47,7 @@ export function OrgMonthly({ monthly, state, theme }: TemplateProps) {
             ) : (
               <div
                 className="flex h-16 w-16 items-center justify-center rounded-xl text-2xl font-bold"
-                style={{ backgroundColor: theme.muted, color: theme.accent }}
+                style={{ backgroundColor: theme.muted, color: accent }}
               >
                 {(org?.name ?? state.city).slice(0, 1).toUpperCase()}
               </div>
@@ -53,14 +56,14 @@ export function OrgMonthly({ monthly, state, theme }: TemplateProps) {
               <h1 className="text-3xl font-bold leading-tight">{org?.name ?? state.city}</h1>
               {org?.address && <p className="text-base opacity-75">{org.address}</p>}
               {org?.tagline && (
-                <p className="text-base font-medium" style={{ color: theme.accent }}>
+                <p className="text-base font-medium" style={{ color: accent }}>
                   {org.tagline}
                 </p>
               )}
             </div>
           </div>
           <p className="text-xl font-medium opacity-70">
-            {toNumerals(String(monthly.month), lang)}/{toNumerals(String(monthly.year), lang)}
+            {toNumerals(String(monthly.month), numerals)}/{toNumerals(String(monthly.year), numerals)}
           </p>
         </header>
 
@@ -71,12 +74,12 @@ export function OrgMonthly({ monthly, state, theme }: TemplateProps) {
         ) : (
           <table className="w-full flex-1 border-collapse text-left" style={{ tableLayout: "fixed" }}>
             <thead>
-              <tr style={{ borderBottom: `2px solid ${theme.accent}` }}>
+              <tr style={{ borderBottom: `2px solid ${accent}` }}>
                 <th className="p-1.5 text-base font-semibold">{label("day", lang)}</th>
-                <th className="p-1.5 text-center text-base font-semibold" style={{ color: theme.accent }}>
+                <th className="p-1.5 text-center text-base font-semibold" style={{ color: accent }}>
                   {label("sehri", lang)}
                 </th>
-                <th className="p-1.5 text-center text-base font-semibold" style={{ color: theme.accent }}>
+                <th className="p-1.5 text-center text-base font-semibold" style={{ color: accent }}>
                   {label("iftar", lang)}
                 </th>
                 {rows.map((key) => (
@@ -95,15 +98,15 @@ export function OrgMonthly({ monthly, state, theme }: TemplateProps) {
                     style={{ backgroundColor: i % 2 === 1 ? theme.muted : "transparent" }}
                   >
                     <td className="p-1.5 text-sm font-medium">
-                      {toNumerals(String(gregDay), lang)}
+                      {toNumerals(String(gregDay), numerals)}
                       <span className="ml-1 text-xs opacity-60">
-                        /{toNumerals(String(hijriDay), lang)}
+                        /{toNumerals(String(hijriDay), numerals)}
                       </span>
                     </td>
-                    <td className="p-1.5 text-center text-sm font-semibold" style={{ color: theme.accent }}>
+                    <td className="p-1.5 text-center text-sm font-semibold" style={{ color: accent }}>
                       {fmt(day.fasting.sehri)}
                     </td>
-                    <td className="p-1.5 text-center text-sm font-semibold" style={{ color: theme.accent }}>
+                    <td className="p-1.5 text-center text-sm font-semibold" style={{ color: accent }}>
                       {fmt(day.fasting.iftar)}
                     </td>
                     {rows.map((key) => (

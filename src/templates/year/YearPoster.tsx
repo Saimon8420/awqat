@@ -38,8 +38,10 @@ type MonthPanelProps = {
   monthIndex: number;
   monthly: MonthlyResponse | undefined;
   lang: Lang;
+  numerals: Lang;
   hour12: boolean;
   theme: ThemeTokens;
+  accent: string;
 };
 
 /**
@@ -49,24 +51,25 @@ type MonthPanelProps = {
  * scale). Renders a small placeholder when `monthly` hasn't loaded yet
  * (partial `months` results) or has no days.
  */
-function MonthPanel({ monthIndex, monthly, lang, hour12, theme }: MonthPanelProps) {
+function MonthPanel({ monthIndex, monthly, lang, numerals, hour12, theme, accent }: MonthPanelProps) {
   const name = monthName(monthIndex, lang);
   const ramadan = monthly ? isRamadanMonth(monthly.days) : false;
 
   const panelStyle: CSSProperties = {
-    borderColor: ramadan ? theme.accent : `${theme.fg}22`,
+    borderColor: ramadan ? accent : `${theme.fg}22`,
     borderWidth: ramadan ? 2 : 1,
-    backgroundColor: ramadan ? `${theme.accent}14` : "transparent",
+    backgroundColor: ramadan ? `${accent}14` : "transparent",
   };
 
-  const fmt = (iso: string, timezone: string) => formatTime(iso, { hour12, lang, timezone });
+  const fmt = (iso: string, timezone: string) =>
+    formatTime(iso, { hour12, lang: numerals, timezone });
 
   return (
     <div className="flex flex-col overflow-hidden rounded border p-1" style={panelStyle}>
       <div className="mb-0.5 flex items-baseline justify-between">
         <span className="text-[11px] font-semibold">{name}</span>
         {ramadan && (
-          <span className="text-[8px] font-semibold" style={{ color: theme.accent }}>
+          <span className="text-[8px] font-semibold" style={{ color: accent }}>
             {label("ramadan", lang)}
           </span>
         )}
@@ -84,17 +87,17 @@ function MonthPanel({ monthIndex, monthly, lang, hour12, theme }: MonthPanelProp
           style={{ tableLayout: "fixed" }}
         >
           <thead>
-            <tr style={{ borderBottom: `1px solid ${theme.accent}` }}>
+            <tr style={{ borderBottom: `1px solid ${accent}` }}>
               <th className="px-0.5 py-px text-left font-semibold">{label("day", lang)}</th>
               <th
                 className="px-0.5 py-px text-center font-semibold"
-                style={{ color: theme.accent }}
+                style={{ color: accent }}
               >
                 {label("sehri", lang)}
               </th>
               <th
                 className="px-0.5 py-px text-center font-semibold"
-                style={{ color: theme.accent }}
+                style={{ color: accent }}
               >
                 {label("iftar", lang)}
               </th>
@@ -111,11 +114,11 @@ function MonthPanel({ monthIndex, monthly, lang, hour12, theme }: MonthPanelProp
                   key={day.dateISO}
                   style={{ backgroundColor: i % 2 === 1 ? theme.muted : "transparent" }}
                 >
-                  <td className="px-0.5">{toNumerals(String(gregDay), lang)}</td>
-                  <td className="px-0.5 text-center" style={{ color: theme.accent }}>
+                  <td className="px-0.5">{toNumerals(String(gregDay), numerals)}</td>
+                  <td className="px-0.5 text-center" style={{ color: accent }}>
                     {fmt(day.fasting.sehri, tz)}
                   </td>
-                  <td className="px-0.5 text-center" style={{ color: theme.accent }}>
+                  <td className="px-0.5 text-center" style={{ color: accent }}>
                     {fmt(day.fasting.iftar, tz)}
                   </td>
                   <td className="px-0.5 text-center">{fmt(day.prayers.fajr, tz)}</td>
@@ -139,8 +142,11 @@ function MonthPanel({ monthIndex, monthly, lang, hour12, theme }: MonthPanelProp
  * loading message instead of guessing at data.
  */
 export function YearPoster({ state, theme, months }: TemplateProps) {
-  const { lang, hour12, city, year } = state;
+  const { lang, hour12, numerals, city, year } = state;
   const rootStyle: CSSProperties = { backgroundColor: theme.bg, color: theme.fg, position: "relative" };
+  // The user's custom accent wins when set; otherwise fall back to the
+  // current theme's accent.
+  const accent = state.accent || theme.accent;
 
   const hijriSpan = months && months.length > 0 ? hijriYearSpan(months) : null;
   const firstMonth = months?.[0];
@@ -160,9 +166,9 @@ export function YearPoster({ state, theme, months }: TemplateProps) {
       <header className="mb-4 flex items-baseline justify-between">
         <div>
           <h1 className="text-3xl font-bold">
-            {city} · {toNumerals(String(year), lang)}
+            {city} · {toNumerals(String(year), numerals)}
           </h1>
-          {hijriSpan && <p className="text-sm opacity-70">{toNumerals(hijriSpan, lang)}</p>}
+          {hijriSpan && <p className="text-sm opacity-70">{toNumerals(hijriSpan, numerals)}</p>}
         </div>
         <div className="text-right text-xs opacity-60">
           {methodCaption && <p>{methodCaption}</p>}
@@ -185,8 +191,10 @@ export function YearPoster({ state, theme, months }: TemplateProps) {
               monthIndex={i + 1}
               monthly={months[i]}
               lang={lang}
+              numerals={numerals}
               hour12={hour12}
               theme={theme}
+              accent={accent}
             />
           ))}
         </div>

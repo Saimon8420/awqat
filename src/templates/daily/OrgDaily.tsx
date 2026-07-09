@@ -13,8 +13,11 @@ import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS, pickToday } from "./s
  * theme's accent used as a brand banner.
  */
 export function OrgDaily({ monthly, qibla, state, theme }: TemplateProps) {
-  const { lang, hour12, showRows, showQibla, org } = state;
+  const { lang, hour12, numerals, showRows, showQibla, org } = state;
   const today = pickToday(monthly, state);
+  // The user's custom accent wins when set; otherwise fall back to the
+  // current theme's accent.
+  const accent = state.accent || theme.accent;
 
   const rootStyle: CSSProperties = {
     backgroundColor: theme.bg,
@@ -38,10 +41,11 @@ export function OrgDaily({ monthly, qibla, state, theme }: TemplateProps) {
     );
   }
 
-  const fmt = (iso: string) => formatTime(iso, { hour12, lang, timezone: monthly.location.timezone });
-  const hijri = `${toNumerals(String(today.hijri.day), lang)} ${today.hijri.monthName} ${toNumerals(
+  const fmt = (iso: string) =>
+    formatTime(iso, { hour12, lang: numerals, timezone: monthly.location.timezone });
+  const hijri = `${toNumerals(String(today.hijri.day), numerals)} ${today.hijri.monthName} ${toNumerals(
     String(today.hijri.year),
-    lang,
+    numerals,
   )} AH`;
 
   return (
@@ -51,7 +55,7 @@ export function OrgDaily({ monthly, qibla, state, theme }: TemplateProps) {
       style={rootStyle}
     >
       <DecorLayer state={state} theme={theme} />
-      <div className="h-4 w-full" style={{ backgroundColor: theme.accent }} />
+      <div className="h-4 w-full" style={{ backgroundColor: accent }} />
 
       <div className="flex flex-1 flex-col justify-between p-16">
         <header className="flex flex-col items-center gap-3 text-center">
@@ -65,7 +69,7 @@ export function OrgDaily({ monthly, qibla, state, theme }: TemplateProps) {
           ) : (
             <div
               className="flex h-28 w-28 items-center justify-center rounded-2xl text-4xl font-bold"
-              style={{ backgroundColor: theme.muted, color: theme.accent }}
+              style={{ backgroundColor: theme.muted, color: accent }}
             >
               {(org?.name ?? state.city).slice(0, 1).toUpperCase()}
             </div>
@@ -73,7 +77,7 @@ export function OrgDaily({ monthly, qibla, state, theme }: TemplateProps) {
           <h1 className="text-6xl font-bold leading-tight">{org?.name ?? state.city}</h1>
           {org?.address && <p className="text-2xl opacity-75">{org.address}</p>}
           {org?.tagline && (
-            <p className="text-2xl font-medium" style={{ color: theme.accent }}>
+            <p className="text-2xl font-medium" style={{ color: accent }}>
               {org.tagline}
             </p>
           )}
@@ -88,7 +92,7 @@ export function OrgDaily({ monthly, qibla, state, theme }: TemplateProps) {
             <p className="text-2xl font-medium uppercase tracking-wide opacity-80">
               {label("sehri", lang)}
             </p>
-            <p className="text-6xl font-bold" style={{ color: theme.accent }}>
+            <p className="text-6xl font-bold" style={{ color: accent }}>
               {fmt(today.fasting.sehri)}
             </p>
           </div>
@@ -99,7 +103,7 @@ export function OrgDaily({ monthly, qibla, state, theme }: TemplateProps) {
             <p className="text-2xl font-medium uppercase tracking-wide opacity-80">
               {label("iftar", lang)}
             </p>
-            <p className="text-6xl font-bold" style={{ color: theme.accent }}>
+            <p className="text-6xl font-bold" style={{ color: accent }}>
               {fmt(today.fasting.iftar)}
             </p>
           </div>
@@ -117,10 +121,10 @@ export function OrgDaily({ monthly, qibla, state, theme }: TemplateProps) {
         {showQibla && qibla && (
           <section
             className="flex items-center justify-center gap-3 rounded-2xl py-4 text-center"
-            style={{ borderColor: theme.accent, borderWidth: 2, borderStyle: "solid" }}
+            style={{ borderColor: accent, borderWidth: 2, borderStyle: "solid" }}
           >
-            <p className="text-2xl font-medium" style={{ color: theme.accent }}>
-              {label("qibla", lang)}: {toNumerals(String(Math.round(qibla.bearing)), lang)}°
+            <p className="text-2xl font-medium" style={{ color: accent }}>
+              {label("qibla", lang)}: {toNumerals(String(Math.round(qibla.bearing)), numerals)}°
             </p>
           </section>
         )}

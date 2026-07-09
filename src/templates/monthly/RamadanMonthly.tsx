@@ -26,10 +26,13 @@ const HIGHLIGHT_TYPES = Object.keys(HIGHLIGHT_TAG) as SpecialType[];
  * and Eid al-Fitr are highlighted using the theme's accent color.
  */
 export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateProps) {
-  const { lang, hour12, showRows } = state;
+  const { lang, hour12, numerals, showRows } = state;
   const rows = PRAYER_ROW_KEYS.filter((key) => showRows[key] !== false);
   const fmt = (iso: string) =>
-    formatTime(iso, { hour12, lang, timezone: monthly.location.timezone });
+    formatTime(iso, { hour12, lang: numerals, timezone: monthly.location.timezone });
+  // The user's custom accent wins when set; otherwise fall back to the
+  // current theme's accent.
+  const accent = state.accent || theme.accent;
 
   const ramadanDay = monthly.days.find((d) => d.hijri.monthName === "Ramadan");
   const hijriYear = ramadanDay?.hijri.year ?? monthly.days[0]?.hijri.year;
@@ -48,9 +51,9 @@ export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateP
     >
       <DecorLayer state={state} theme={theme} />
       <header className="mb-4 flex items-baseline justify-between">
-        <h1 className="text-4xl font-bold" style={{ color: theme.accent }}>
+        <h1 className="text-4xl font-bold" style={{ color: accent }}>
           {label("ramadan", lang)}
-          {hijriYear !== undefined ? ` ${toNumerals(String(hijriYear), lang)}` : ""}
+          {hijriYear !== undefined ? ` ${toNumerals(String(hijriYear), numerals)}` : ""}
         </h1>
         <p className="text-xl opacity-70">{state.city}</p>
       </header>
@@ -62,12 +65,12 @@ export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateP
       ) : (
         <table className="w-full flex-1 border-collapse text-left" style={{ tableLayout: "fixed" }}>
           <thead>
-            <tr style={{ borderBottom: `2px solid ${theme.accent}` }}>
+            <tr style={{ borderBottom: `2px solid ${accent}` }}>
               <th className="p-2 text-lg font-semibold">{label("day", lang)}</th>
-              <th className="p-2 text-center text-xl font-bold" style={{ color: theme.accent }}>
+              <th className="p-2 text-center text-xl font-bold" style={{ color: accent }}>
                 {label("sehri", lang)}
               </th>
-              <th className="p-2 text-center text-xl font-bold" style={{ color: theme.accent }}>
+              <th className="p-2 text-center text-xl font-bold" style={{ color: accent }}>
                 {label("iftar", lang)}
               </th>
               {rows.map((key) => (
@@ -86,28 +89,28 @@ export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateP
 
               const rowStyle: CSSProperties = isHighlighted
                 ? {
-                    backgroundColor: `${theme.accent}26`,
-                    borderLeft: `4px solid ${theme.accent}`,
+                    backgroundColor: `${accent}26`,
+                    borderLeft: `4px solid ${accent}`,
                   }
                 : { backgroundColor: i % 2 === 1 ? theme.muted : "transparent" };
 
               return (
                 <tr key={day.dateISO} style={rowStyle}>
                   <td className="p-2 align-top text-base font-medium">
-                    {toNumerals(String(gregDay), lang)}
+                    {toNumerals(String(gregDay), numerals)}
                     <span className="ml-1 text-sm opacity-60">
-                      /{toNumerals(String(hijriDay), lang)}
+                      /{toNumerals(String(hijriDay), numerals)}
                     </span>
                     {highlightType && (
-                      <div className="text-xs font-semibold" style={{ color: theme.accent }}>
+                      <div className="text-xs font-semibold" style={{ color: accent }}>
                         {HIGHLIGHT_TAG[highlightType]}
                       </div>
                     )}
                   </td>
-                  <td className="p-2 text-center text-lg font-bold" style={{ color: theme.accent }}>
+                  <td className="p-2 text-center text-lg font-bold" style={{ color: accent }}>
                     {fmt(day.fasting.sehri)}
                   </td>
-                  <td className="p-2 text-center text-lg font-bold" style={{ color: theme.accent }}>
+                  <td className="p-2 text-center text-lg font-bold" style={{ color: accent }}>
                     {fmt(day.fasting.iftar)}
                   </td>
                   {rows.map((key) => (

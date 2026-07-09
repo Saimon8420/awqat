@@ -15,10 +15,13 @@ import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS } from "../shared";
  * export canvas.
  */
 export function PersonalMonthly({ monthly, state, theme }: TemplateProps) {
-  const { lang, hour12, showRows } = state;
+  const { lang, hour12, numerals, showRows } = state;
   const rows = PRAYER_ROW_KEYS.filter((key) => showRows[key] !== false);
   const fmt = (iso: string) =>
-    formatTime(iso, { hour12, lang, timezone: monthly.location.timezone });
+    formatTime(iso, { hour12, lang: numerals, timezone: monthly.location.timezone });
+  // The user's custom accent wins when set; otherwise fall back to the
+  // current theme's accent.
+  const accent = state.accent || theme.accent;
 
   const rootStyle: CSSProperties = {
     backgroundColor: theme.bg,
@@ -36,7 +39,7 @@ export function PersonalMonthly({ monthly, state, theme }: TemplateProps) {
       <header className="mb-4 flex items-baseline justify-between">
         <h1 className="text-4xl font-bold">{state.city}</h1>
         <p className="text-xl opacity-70">
-          {toNumerals(String(monthly.month), lang)}/{toNumerals(String(monthly.year), lang)}
+          {toNumerals(String(monthly.month), numerals)}/{toNumerals(String(monthly.year), numerals)}
         </p>
       </header>
 
@@ -47,12 +50,12 @@ export function PersonalMonthly({ monthly, state, theme }: TemplateProps) {
       ) : (
         <table className="w-full flex-1 border-collapse text-left" style={{ tableLayout: "fixed" }}>
           <thead>
-            <tr style={{ borderBottom: `2px solid ${theme.accent}` }}>
+            <tr style={{ borderBottom: `2px solid ${accent}` }}>
               <th className="p-2 text-lg font-semibold">{label("day", lang)}</th>
-              <th className="p-2 text-center text-lg font-semibold" style={{ color: theme.accent }}>
+              <th className="p-2 text-center text-lg font-semibold" style={{ color: accent }}>
                 {label("sehri", lang)}
               </th>
-              <th className="p-2 text-center text-lg font-semibold" style={{ color: theme.accent }}>
+              <th className="p-2 text-center text-lg font-semibold" style={{ color: accent }}>
                 {label("iftar", lang)}
               </th>
               {rows.map((key) => (
@@ -71,15 +74,15 @@ export function PersonalMonthly({ monthly, state, theme }: TemplateProps) {
                   style={{ backgroundColor: i % 2 === 1 ? theme.muted : "transparent" }}
                 >
                   <td className="p-2 text-base font-medium">
-                    {toNumerals(String(gregDay), lang)}
+                    {toNumerals(String(gregDay), numerals)}
                     <span className="ml-1 text-sm opacity-60">
-                      /{toNumerals(String(hijriDay), lang)}
+                      /{toNumerals(String(hijriDay), numerals)}
                     </span>
                   </td>
-                  <td className="p-2 text-center text-base font-semibold" style={{ color: theme.accent }}>
+                  <td className="p-2 text-center text-base font-semibold" style={{ color: accent }}>
                     {fmt(day.fasting.sehri)}
                   </td>
-                  <td className="p-2 text-center text-base font-semibold" style={{ color: theme.accent }}>
+                  <td className="p-2 text-center text-base font-semibold" style={{ color: accent }}>
                     {fmt(day.fasting.iftar)}
                   </td>
                   {rows.map((key) => (

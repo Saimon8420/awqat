@@ -44,7 +44,7 @@ export const DEFAULT_STATE: StudioState = {
   hour12: true,
   numerals: "en",
   theme: "emerald",
-  accent: "emerald",
+  accent: "",
   showRows: {
     fajr: true,
     sunrise: true,
