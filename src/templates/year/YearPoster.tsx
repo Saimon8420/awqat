@@ -7,6 +7,7 @@ import { formatTime } from "@/lib/format";
 import { dir, label, toNumerals } from "@/lib/i18n";
 import { dayLabel, isRamadanMonth } from "@/lib/calendar";
 import { cn } from "@/lib/utils";
+import { DecorLayer } from "@/graphics/DecorLayer";
 import { LANG_FONT_CLASS } from "../shared";
 
 const MONTH_COUNT = 12;
@@ -139,7 +140,7 @@ function MonthPanel({ monthIndex, monthly, lang, hour12, theme }: MonthPanelProp
  */
 export function YearPoster({ state, theme, months }: TemplateProps) {
   const { lang, hour12, city, year } = state;
-  const rootStyle: CSSProperties = { backgroundColor: theme.bg, color: theme.fg };
+  const rootStyle: CSSProperties = { backgroundColor: theme.bg, color: theme.fg, position: "relative" };
 
   const hijriSpan = months && months.length > 0 ? hijriYearSpan(months) : null;
   const firstMonth = months?.[0];
@@ -155,6 +156,7 @@ export function YearPoster({ state, theme, months }: TemplateProps) {
       className={cn("flex h-full w-full flex-col p-8", LANG_FONT_CLASS[lang])}
       style={rootStyle}
     >
+      <DecorLayer state={state} theme={theme} />
       <header className="mb-4 flex items-baseline justify-between">
         <div>
           <h1 className="text-3xl font-bold">

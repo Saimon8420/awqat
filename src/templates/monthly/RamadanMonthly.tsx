@@ -3,6 +3,7 @@ import { formatTime } from "@/lib/format";
 import { dir, label, toNumerals } from "@/lib/i18n";
 import { dayLabel, type SpecialType } from "@/lib/calendar";
 import { cn } from "@/lib/utils";
+import { DecorLayer } from "@/graphics/DecorLayer";
 import type { TemplateProps } from "../registry";
 import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS } from "../shared";
 
@@ -36,6 +37,7 @@ export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateP
   const rootStyle: CSSProperties = {
     backgroundColor: theme.bg,
     color: theme.fg,
+    position: "relative",
   };
 
   return (
@@ -44,6 +46,7 @@ export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateP
       className={cn("flex h-full w-full flex-col p-10", LANG_FONT_CLASS[lang])}
       style={rootStyle}
     >
+      <DecorLayer state={state} theme={theme} />
       <header className="mb-4 flex items-baseline justify-between">
         <h1 className="text-4xl font-bold" style={{ color: theme.accent }}>
           {label("ramadan", lang)}

@@ -15,6 +15,10 @@ export type StudioState = {
   theme: string;
   accent: string;
   bgImage?: string;
+  /** Selected `MOTIFS` id (see `src/graphics/index.tsx`), or unset for none. */
+  motif?: string;
+  /** Selected `GRADIENTS` id (see `src/graphics/backgrounds.ts`), or unset for none. */
+  gradient?: string;
   showRows: Record<string, boolean>;
   org?: { name?: string; address?: string; tagline?: string; logo?: string };
   personal?: { greeting?: string; dua?: string };
@@ -65,6 +69,8 @@ const SCALAR_KEYS = [
   "numerals",
   "theme",
   "accent",
+  "motif",
+  "gradient",
   "showQibla",
 ] as const;
 

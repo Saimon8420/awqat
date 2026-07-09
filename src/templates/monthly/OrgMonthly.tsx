@@ -3,6 +3,7 @@ import { formatTime } from "@/lib/format";
 import { dir, label, toNumerals } from "@/lib/i18n";
 import { dayLabel } from "@/lib/calendar";
 import { cn } from "@/lib/utils";
+import { DecorLayer } from "@/graphics/DecorLayer";
 import type { TemplateProps } from "../registry";
 import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS } from "../shared";
 
@@ -22,10 +23,12 @@ export function OrgMonthly({ monthly, state, theme }: TemplateProps) {
   const rootStyle: CSSProperties = {
     backgroundColor: theme.bg,
     color: theme.fg,
+    position: "relative",
   };
 
   return (
     <div dir={dir(lang)} className={cn("flex h-full w-full flex-col", LANG_FONT_CLASS[lang])} style={rootStyle}>
+      <DecorLayer state={state} theme={theme} />
       <div className="h-3 w-full" style={{ backgroundColor: theme.accent }} />
 
       <div className="flex flex-1 flex-col p-8">
