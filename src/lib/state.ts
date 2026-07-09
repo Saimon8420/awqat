@@ -23,6 +23,12 @@ export type StudioState = {
   motif?: string;
   /** Selected `GRADIENTS` id (see `src/graphics/backgrounds.ts`), or unset for none. */
   gradient?: string;
+  /** Photo background scrim opacity, 0-100 (%). Unset falls back to the effective default of 55. */
+  bgDim?: number;
+  /** Photo background blur, 0-20 (px). Unset falls back to the effective default of 0 (no blur). */
+  bgBlur?: number;
+  /** Card corner radius, 0-48 (px). Unset keeps each template's own default rounded look. */
+  radius?: number;
   showRows: Record<string, boolean>;
   org?: { name?: string; address?: string; tagline?: string; logo?: string };
   personal?: { greeting?: string; dua?: string };
@@ -45,7 +51,7 @@ export const DEFAULT_STATE: StudioState = {
   month: new Date().getMonth() + 1,
   day: new Date().getDate(),
   format: "daily",
-  template: "classic",
+  template: "daily-classic",
   lang: "en",
   hour12: true,
   numerals: "en",
@@ -86,12 +92,17 @@ const SCALAR_KEYS = [
   "accent",
   "motif",
   "gradient",
+  "bgDim",
+  "bgBlur",
+  "radius",
   "showQibla",
   "exportRatio",
 ] as const;
 
-const NUMBER_KEYS = new Set(["lat", "lon", "year", "month", "day"]);
+const NUMBER_KEYS = new Set(["lat", "lon", "year", "month", "day", "bgDim", "bgBlur", "radius"]);
 const BOOLEAN_KEYS = new Set(["hour12", "showQibla"]);
+const FORMAT_VALUES = new Set(["daily", "monthly", "year"]);
+const LANG_VALUES = new Set(["en", "bn", "ar"]);
 
 export function encodeState(s: StudioState): string {
   const params = new URLSearchParams();
@@ -111,9 +122,17 @@ export function decodeState(query: string): Partial<StudioState> {
     if (!params.has(key)) continue;
     const raw = params.get(key) as string;
     if (NUMBER_KEYS.has(key)) {
-      result[key] = Number(raw);
+      const num = Number(raw);
+      if (!Number.isFinite(num)) continue; // malformed (e.g. "abc") — ignore rather than propagate NaN
+      result[key] = num;
     } else if (BOOLEAN_KEYS.has(key)) {
       result[key] = raw === "true";
+    } else if (key === "format") {
+      if (!FORMAT_VALUES.has(raw)) continue; // e.g. "bogus" — ignore rather than propagate an invalid format
+      result[key] = raw;
+    } else if (key === "lang" || key === "numerals") {
+      if (!LANG_VALUES.has(raw)) continue;
+      result[key] = raw;
     } else {
       result[key] = raw;
     }

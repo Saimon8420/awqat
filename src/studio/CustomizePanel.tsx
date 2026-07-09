@@ -7,6 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -215,6 +216,46 @@ export function CustomizePanel() {
             </Button>
           )}
         </div>
+
+        {state.bgImage && (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="bg-dim-slider" className="text-xs font-normal text-muted-foreground">
+                  Dim
+                </Label>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {state.bgDim ?? 55}%
+                </span>
+              </div>
+              <Slider
+                id="bg-dim-slider"
+                min={0}
+                max={100}
+                value={state.bgDim ?? 55}
+                onValueChange={(v) => updateState({ bgDim: v as number })}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="bg-blur-slider" className="text-xs font-normal text-muted-foreground">
+                  Blur
+                </Label>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {state.bgBlur ?? 0}px
+                </span>
+              </div>
+              <Slider
+                id="bg-blur-slider"
+                min={0}
+                max={20}
+                value={state.bgBlur ?? 0}
+                onValueChange={(v) => updateState({ bgBlur: v as number })}
+              />
+            </div>
+          </>
+        )}
       </section>
 
       {/* Motif */}
@@ -236,6 +277,23 @@ export function CustomizePanel() {
             ))}
           </SelectContent>
         </Select>
+      </section>
+
+      {/* Layout */}
+      <section className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="radius-slider">Corner radius</Label>
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {state.radius ?? 0}px
+          </span>
+        </div>
+        <Slider
+          id="radius-slider"
+          min={0}
+          max={48}
+          value={state.radius ?? 0}
+          onValueChange={(v) => updateState({ radius: v as number })}
+        />
       </section>
 
       {/* Language & numerals */}

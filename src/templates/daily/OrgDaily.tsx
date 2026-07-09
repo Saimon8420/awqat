@@ -25,6 +25,11 @@ export function OrgDaily({ monthly, qibla, state, theme }: TemplateProps) {
     backgroundColor: theme.bg,
     color: theme.fg,
     position: "relative",
+    // Forms a stacking context so DecorLayer's negative z-index paints above
+    // this backgroundColor (but still below normal-flow content) instead of
+    // behind it. See DecorLayer's own doc comment for the full explanation.
+    isolation: "isolate",
+    ...(typeof state.radius === "number" ? { borderRadius: state.radius } : null),
   };
 
   if (!today) {

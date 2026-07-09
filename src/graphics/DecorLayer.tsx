@@ -58,10 +58,16 @@ export function DecorLayer({ state, theme, accent }: DecorLayerProps) {
         <>
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${state.bgImage})` }}
+            style={{
+              backgroundImage: `url("${state.bgImage}")`,
+              filter: `blur(${state.bgBlur ?? 0}px)`,
+            }}
           />
           {/* Legibility scrim so text stays readable over a photo backdrop. */}
-          <div className="absolute inset-0" style={{ backgroundColor: theme.bg, opacity: 0.55 }} />
+          <div
+            className="absolute inset-0"
+            style={{ backgroundColor: theme.bg, opacity: (state.bgDim ?? 55) / 100 }}
+          />
         </>
       ) : null}
 

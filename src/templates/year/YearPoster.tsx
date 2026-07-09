@@ -144,7 +144,16 @@ function MonthPanel({ monthIndex, monthly, lang, numerals, hour12, theme, accent
  */
 export function YearPoster({ state, theme, months }: TemplateProps) {
   const { lang, hour12, numerals, city, year } = state;
-  const rootStyle: CSSProperties = { backgroundColor: theme.bg, color: theme.fg, position: "relative" };
+  const rootStyle: CSSProperties = {
+    backgroundColor: theme.bg,
+    color: theme.fg,
+    position: "relative",
+    // Forms a stacking context so DecorLayer's negative z-index paints above
+    // this backgroundColor (but still below normal-flow content) instead of
+    // behind it. See DecorLayer's own doc comment for the full explanation.
+    isolation: "isolate",
+    ...(typeof state.radius === "number" ? { borderRadius: state.radius } : null),
+  };
   // The user's custom accent wins when set; otherwise fall back to the
   // current theme's accent.
   const accent = state.accent || theme.accent;
