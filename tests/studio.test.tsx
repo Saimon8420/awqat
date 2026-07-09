@@ -27,6 +27,32 @@ const mockMonthly = {
   days: [],
 };
 
+const mkDay = (dateISO: string, hijriDay: number, monthName: string) => ({
+  dateISO,
+  hijri: { day: hijriDay, monthName, year: 1447 },
+  prayers: {
+    fajr: `${dateISO}T04:00:00.000Z`,
+    sunrise: `${dateISO}T05:30:00.000Z`,
+    dhuhr: `${dateISO}T12:00:00.000Z`,
+    asr: `${dateISO}T15:30:00.000Z`,
+    maghrib: `${dateISO}T18:00:00.000Z`,
+    isha: `${dateISO}T19:30:00.000Z`,
+  },
+  fasting: { sehri: `${dateISO}T03:45:00.000Z`, iftar: `${dateISO}T18:00:00.000Z` },
+});
+
+// A Ramadan-dominant month (see isRamadanMonth in src/lib/calendar.ts), used
+// to exercise Studio's Ramadan-template auto-suggest.
+const ramadanMonthly = {
+  ...mockMonthly,
+  month: 3,
+  days: [
+    mkDay("2026-03-01", 12, "Ramadan"),
+    mkDay("2026-03-02", 13, "Ramadan"),
+    mkDay("2026-03-03", 14, "Ramadan"),
+  ],
+};
+
 beforeEach(() => {
   localStorage.clear();
   window.history.replaceState(null, "", "/");
@@ -169,5 +195,38 @@ describe("Studio", () => {
       replaceStateSpy.mockRestore();
       setItemSpy.mockRestore();
     }
+  });
+
+  it("auto-suggests the Ramadan template when a Ramadan-dominant month loads and the template hasn't been touched", async () => {
+    vi.mocked(getMonthly).mockResolvedValue(ramadanMonthly);
+    render(<Studio />);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Monthly" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("current-template")).toHaveTextContent("monthly-ramadan");
+    });
+  });
+
+  it("does not auto-suggest the Ramadan template once the user has manually picked a template", async () => {
+    vi.mocked(getMonthly).mockResolvedValue(ramadanMonthly);
+    render(<Studio />);
+
+    // Manually pick the (already-selected) Daily Classic template via the
+    // gallery — this marks templateTouched even before switching format.
+    await waitFor(() => expect(screen.getByText("Daily Classic")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("Daily Classic").closest("button")!);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Monthly" }));
+
+    await waitFor(() => {
+      const monthlyIds = templatesFor("monthly").map((t) => t.id);
+      expect(monthlyIds).toContain(screen.getByTestId("current-template").textContent);
+    });
+
+    // Give the auto-suggest effect a chance to (incorrectly) fire; it must
+    // not override the format-fallback template with monthly-ramadan.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByTestId("current-template")).not.toHaveTextContent("monthly-ramadan");
   });
 });

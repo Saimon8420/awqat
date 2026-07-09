@@ -14,7 +14,14 @@ const LANES: { value: TemplateDef["lane"]; label: string }[] = [
  * it via `updateState({ template })`.
  */
 export function TemplateGallery() {
-  const { state, updateState } = useStudio();
+  const { state, updateState, setTemplateTouched } = useStudio();
+
+  function pickTemplate(id: string) {
+    updateState({ template: id });
+    // A manual pick from the gallery — remember it so the Ramadan
+    // auto-suggest (see Studio.tsx) never overrides an explicit choice.
+    setTemplateTouched(true);
+  }
 
   const byLane: Record<TemplateDef["lane"], TemplateDef[]> = {
     personal: templatesFor(state.format, "personal"),
@@ -55,7 +62,7 @@ export function TemplateGallery() {
                   key={t.id}
                   type="button"
                   aria-pressed={state.template === t.id}
-                  onClick={() => updateState({ template: t.id })}
+                  onClick={() => pickTemplate(t.id)}
                   className={cn(
                     "flex flex-col items-center gap-1.5 rounded-lg border p-2 text-xs transition-colors",
                     state.template === t.id

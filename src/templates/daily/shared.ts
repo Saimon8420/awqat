@@ -1,27 +1,9 @@
 import type { DayTimes, MonthlyResponse } from "@/lib/miqaat";
-import type { Lang } from "@/lib/i18n";
 
-/**
- * Font utility class per calendar language, keyed identically to
- * src/fonts/fonts.css's `.font-latin|.font-bengali|.font-arabic` classes.
- */
-export const LANG_FONT_CLASS: Record<Lang, string> = {
-  en: "font-latin",
-  bn: "font-bengali",
-  ar: "font-arabic",
-};
-
-/** The five daily prayers + Sunrise, in display order. */
-export const PRAYER_ROW_KEYS = [
-  "fajr",
-  "sunrise",
-  "dhuhr",
-  "asr",
-  "maghrib",
-  "isha",
-] as const;
-
-export type PrayerRowKey = (typeof PRAYER_ROW_KEYS)[number];
+// LANG_FONT_CLASS/PRAYER_ROW_KEYS/ROW_LABEL_KEYS live in ../shared so monthly
+// templates can reuse them without duplicating the constants; re-exported
+// here so daily templates' existing `./shared` imports keep working.
+export { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS, type PrayerRowKey } from "../shared";
 
 /**
  * Picks "today" from a fetched month: the day whose `dateISO` matches the

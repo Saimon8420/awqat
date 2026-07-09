@@ -1,18 +1,9 @@
 import type { CSSProperties } from "react";
 import { formatTime } from "@/lib/format";
-import { dir, label, toNumerals, type LabelKey } from "@/lib/i18n";
+import { dir, label, toNumerals } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { TemplateProps } from "../registry";
-import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, pickToday } from "./shared";
-
-const ROW_LABEL_KEYS: Record<(typeof PRAYER_ROW_KEYS)[number], LabelKey> = {
-  fajr: "fajr",
-  sunrise: "sunrise",
-  dhuhr: "dhuhr",
-  asr: "asr",
-  maghrib: "maghrib",
-  isha: "isha",
-};
+import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS, pickToday } from "./shared";
 
 /**
  * The "Daily Masjid Schedule" organization card (id `daily-org`). Same data

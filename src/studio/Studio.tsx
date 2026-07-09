@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DEFAULT_STATE,
   decodeState,
@@ -16,7 +16,7 @@ import {
   type MonthlyResponse,
   type QiblaData,
 } from "@/lib/miqaat";
-import { specialDaysForMonth, type SpecialType } from "@/lib/calendar";
+import { isRamadanMonth, specialDaysForMonth, type SpecialType } from "@/lib/calendar";
 import { LocationBar } from "./LocationBar";
 import { FormatTabs } from "./FormatTabs";
 import { PreviewStage } from "./PreviewStage";
@@ -61,6 +61,15 @@ export function Studio() {
   const [state, setState] = useState<StudioState>(() => computeInitialState());
   const [methodOverridden, setMethodOverridden] = useState(false);
   const [fetchState, setFetchState] = useState<FetchState>(INITIAL_FETCH_STATE);
+  // Whether the user has explicitly picked a template this session (see
+  // StudioContextValue.setTemplateTouched / TemplateGallery). Gates the
+  // Ramadan auto-suggest below so it never overrides a manual choice.
+  const [templateTouched, setTemplateTouched] = useState(false);
+  // Dedup key ("year-month") for the last month the Ramadan auto-suggest
+  // fired for, so it runs at most once per fetched month rather than on
+  // every re-render (which would otherwise fight a subsequent manual
+  // template change back to `monthly-ramadan`).
+  const ramadanSuggestedForRef = useRef<string | null>(null);
 
   const updateState = useCallback((patch: Partial<StudioState>) => {
     setState((prev) => withValidTemplate({ ...prev, ...patch }));
@@ -128,8 +137,34 @@ export function Studio() {
     // prove the wiring works.
   }, [state.lat, state.lon, state.year, month, state.method, state.madhab, state.format]);
 
+  // Auto-suggest the Ramadan template: once per fetched month, if the month
+  // is Ramadan-dominant and the user hasn't manually picked a template this
+  // session, default to `monthly-ramadan` — but only while viewing the
+  // monthly format (switching format doesn't discard the suggestion; it
+  // just doesn't apply while looking at daily/year). Gated by
+  // `ramadanSuggestedForRef` so this fires at most once per month-load: the
+  // `setState` call below changes `state.template`, which is itself a
+  // dependency of this effect, but the ref check short-circuits the re-run
+  // instead of looping.
+  useEffect(() => {
+    const monthly = fetchState.monthly;
+    if (!monthly) return;
+    if (state.format !== "monthly") return;
+    if (templateTouched) return;
+
+    const monthKey = `${monthly.year}-${monthly.month}`;
+    if (ramadanSuggestedForRef.current === monthKey) return;
+
+    if (!isRamadanMonth(monthly.days)) return;
+
+    ramadanSuggestedForRef.current = monthKey;
+    if (state.template !== "monthly-ramadan") {
+      setState((prev) => withValidTemplate({ ...prev, template: "monthly-ramadan" }));
+    }
+  }, [fetchState.monthly, state.format, state.template, templateTouched]);
+
   const ctxValue: StudioContextValue = useMemo(
-    () => ({ state, updateState, methodOverridden, setMethodOverridden }),
+    () => ({ state, updateState, methodOverridden, setMethodOverridden, setTemplateTouched }),
     [state, updateState, methodOverridden],
   );
 

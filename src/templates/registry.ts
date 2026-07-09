@@ -5,6 +5,9 @@ import type { StudioState } from "@/lib/state";
 import type { ThemeTokens } from "./themes";
 import { PersonalDaily } from "./daily/PersonalDaily";
 import { OrgDaily } from "./daily/OrgDaily";
+import { PersonalMonthly } from "./monthly/PersonalMonthly";
+import { OrgMonthly } from "./monthly/OrgMonthly";
+import { RamadanMonthly } from "./monthly/RamadanMonthly";
 
 export type TemplateProps = {
   monthly: MonthlyResponse;
@@ -24,11 +27,9 @@ export type TemplateDef = {
   thumbnail?: string;
 };
 
-// Stub components — real templates land in Tasks 11-12. These placeholders
-// exist purely so the registry/format filters have at least one entry per
-// format and the lane filter has something to narrow.
-const StubMonthly: React.FC<TemplateProps> = () => null;
-const StubMonthlyOrg: React.FC<TemplateProps> = () => null;
+// Stub component — the Year format template lands in Task 12. This
+// placeholder exists purely so the registry/format filters have at least
+// one entry for "year" and the lane filter has something to narrow.
 const StubYear: React.FC<TemplateProps> = () => null;
 
 export const TEMPLATES: TemplateDef[] = [
@@ -51,14 +52,21 @@ export const TEMPLATES: TemplateDef[] = [
     name: "Monthly Classic",
     lane: "personal",
     format: "monthly",
-    Component: StubMonthly,
+    Component: PersonalMonthly,
   },
   {
     id: "monthly-masjid",
     name: "Monthly Masjid Schedule",
     lane: "organization",
     format: "monthly",
-    Component: StubMonthlyOrg,
+    Component: OrgMonthly,
+  },
+  {
+    id: "monthly-ramadan",
+    name: "Ramadan",
+    lane: "personal",
+    format: "monthly",
+    Component: RamadanMonthly,
   },
   {
     id: "year-overview",
