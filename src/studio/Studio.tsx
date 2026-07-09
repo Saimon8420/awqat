@@ -74,6 +74,12 @@ export function Studio() {
   // StudioContextValue.setTemplateTouched / TemplateGallery). Gates the
   // Ramadan auto-suggest below so it never overrides a manual choice.
   const [templateTouched, setTemplateTouched] = useState(false);
+  // Export-capture flag (see StudioContextValue.exporting): Task 16's export
+  // pipeline flips this true around the html-to-image capture of
+  // #export-node so any moment-in-time UI (currently LiveCountdown) can
+  // freeze itself. Lives in context rather than a threaded prop so any
+  // future consumer can opt in without a new prop chain.
+  const [exporting, setExporting] = useState(false);
   // Dedup key ("year-month") for the last month the Ramadan auto-suggest
   // fired for, so it runs at most once per fetched month rather than on
   // every re-render (which would otherwise fight a subsequent manual
@@ -214,8 +220,16 @@ export function Studio() {
   }, [fetchState.monthly, state.format, state.template, templateTouched]);
 
   const ctxValue: StudioContextValue = useMemo(
-    () => ({ state, updateState, methodOverridden, setMethodOverridden, setTemplateTouched }),
-    [state, updateState, methodOverridden],
+    () => ({
+      state,
+      updateState,
+      methodOverridden,
+      setMethodOverridden,
+      setTemplateTouched,
+      exporting,
+      setExporting,
+    }),
+    [state, updateState, methodOverridden, exporting],
   );
 
   return (

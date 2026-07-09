@@ -5,6 +5,7 @@ import type { StudioState } from "@/lib/state";
 import { TEMPLATES } from "@/templates/registry";
 import { THEMES } from "@/templates/themes";
 import { useStudio } from "./context";
+import { LiveCountdown } from "./LiveCountdown";
 
 type PreviewStageProps = {
   monthly: MonthlyResponse | null;
@@ -42,7 +43,7 @@ export function PreviewStage({
   loading,
   error,
 }: PreviewStageProps) {
-  const { state } = useStudio();
+  const { state, exporting } = useStudio();
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
@@ -75,8 +76,19 @@ export function PreviewStage({
   return (
     <div
       ref={containerRef}
-      className="flex h-full w-full items-center justify-center overflow-auto p-8"
+      className="relative flex h-full w-full items-center justify-center overflow-auto p-8"
     >
+      {/* In-app-only live countdown chrome: intentionally rendered here,
+          outside #export-node, so it never appears in exported images (see
+          LiveCountdown's doc comment). `frozen` is threaded from the studio
+          context's `exporting` flag as a belt-and-suspenders seam for Task
+          16's export pipeline. */}
+      {state.format === "daily" && monthly && (
+        <div className="absolute right-4 top-4 z-10 rounded-full border border-border bg-background/90 px-3 py-1.5 shadow-sm backdrop-blur">
+          <LiveCountdown monthly={monthly} state={state} frozen={exporting} />
+        </div>
+      )}
+
       {loading && !monthly && (
         <p className="text-sm text-muted-foreground" role="status">
           Loading prayer times…

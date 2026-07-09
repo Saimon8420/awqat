@@ -14,6 +14,14 @@ export type StudioContextValue = {
    * so the Ramadan auto-suggest knows not to override the user's choice.
    */
   setTemplateTouched: (v: boolean) => void;
+  /**
+   * True while the export pipeline (Task 16) is capturing `#export-node`
+   * (e.g. via html-to-image). Defaults to false. Consumers that render
+   * moment-in-time UI near the preview — currently `LiveCountdown` via
+   * `PreviewStage` — read this to freeze themselves during capture.
+   */
+  exporting: boolean;
+  setExporting: (v: boolean) => void;
 };
 
 export const StudioContext = createContext<StudioContextValue | null>(null);

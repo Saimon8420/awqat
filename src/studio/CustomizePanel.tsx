@@ -16,6 +16,7 @@ import { GRADIENTS } from "@/graphics/backgrounds";
 import { PRAYER_ROW_KEYS, ROW_LABEL_KEYS } from "@/templates/shared";
 import { label, type Lang } from "@/lib/i18n";
 import { useStudio } from "./context";
+import { PersonalizeFields } from "./PersonalizeFields";
 
 const NONE = "none";
 
@@ -315,6 +316,10 @@ export function CustomizePanel() {
           onCheckedChange={(checked) => updateState({ showQibla: checked })}
         />
       </section>
+
+      {/* Personalize: lane-aware (organization vs personal) fields, see
+          PersonalizeFields for the branching logic. */}
+      <PersonalizeFields />
     </div>
   );
 }

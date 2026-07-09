@@ -3,6 +3,7 @@ import { formatTime } from "@/lib/format";
 import { dir, label, toNumerals } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { DecorLayer } from "@/graphics/DecorLayer";
+import { QiblaCompass } from "@/graphics/QiblaCompass";
 import type { TemplateProps } from "../registry";
 import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS, pickToday } from "./shared";
 
@@ -96,12 +97,13 @@ export function PersonalDaily({ monthly, qibla, state, theme }: TemplateProps) {
 
       {showQibla && qibla && (
         <section
-          className="flex items-center justify-center gap-3 rounded-2xl py-4 text-center"
+          className="flex flex-col items-center justify-center gap-2 rounded-2xl py-4 text-center"
           style={{ borderColor: accent, borderWidth: 2, borderStyle: "solid" }}
         >
-          <p className="text-2xl font-medium" style={{ color: accent }}>
-            {label("qibla", lang)}: {toNumerals(String(Math.round(qibla.bearing)), numerals)}°
+          <p className="text-xl font-medium uppercase tracking-wide opacity-80" style={{ color: accent }}>
+            {label("qibla", lang)}
           </p>
+          <QiblaCompass bearing={qibla.bearing} accent={accent} numerals={numerals} size={100} />
         </section>
       )}
 
