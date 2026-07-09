@@ -1,7 +1,7 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { templatesFor } from "@/templates/registry";
 import type { StudioState } from "@/lib/state";
-import { useStudio } from "./Studio";
+import { useStudio } from "./context";
 
 const FORMATS: { value: StudioState["format"]; label: string }[] = [
   { value: "daily", label: "Daily" },

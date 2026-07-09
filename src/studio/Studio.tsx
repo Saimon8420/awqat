@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DEFAULT_STATE,
   decodeState,
@@ -19,21 +19,7 @@ import {
 import { specialDaysForMonth, type SpecialType } from "@/lib/calendar";
 import { LocationBar } from "./LocationBar";
 import { FormatTabs } from "./FormatTabs";
-
-export type StudioContextValue = {
-  state: StudioState;
-  updateState: (patch: Partial<StudioState>) => void;
-  methodOverridden: boolean;
-  setMethodOverridden: (v: boolean) => void;
-};
-
-const StudioContext = createContext<StudioContextValue | null>(null);
-
-export function useStudio(): StudioContextValue {
-  const ctx = useContext(StudioContext);
-  if (!ctx) throw new Error("useStudio must be used within <Studio/>");
-  return ctx;
-}
+import { StudioContext, type StudioContextValue } from "./context";
 
 /** Ensures `template` is a valid id for `format`, falling back to the first template for that format. */
 function withValidTemplate(s: StudioState): StudioState {
@@ -63,7 +49,9 @@ const INITIAL_FETCH_STATE: FetchState = {
   qibla: null,
   countdowns: null,
   specialDays: {},
-  loading: false,
+  // A fetch always fires on mount, so start in the loading state to avoid a
+  // one-render flash of empty data before the loading indicator appears.
+  loading: true,
   error: null,
 };
 
@@ -72,9 +60,9 @@ export function Studio() {
   const [methodOverridden, setMethodOverridden] = useState(false);
   const [fetchState, setFetchState] = useState<FetchState>(INITIAL_FETCH_STATE);
 
-  function updateState(patch: Partial<StudioState>) {
+  const updateState = useCallback((patch: Partial<StudioState>) => {
     setState((prev) => withValidTemplate({ ...prev, ...patch }));
-  }
+  }, []);
 
   // Persist to localStorage + reflect into the URL on every state change.
   useEffect(() => {
@@ -84,7 +72,10 @@ export function Studio() {
     window.history.replaceState(null, "", next);
   }, [state]);
 
-  // Safety net: whenever the format changes, guarantee the template stays valid.
+  // Defensive guard: `updateState` and `FormatTabs.changeFormat` already keep
+  // `template` valid for the current `format` on every path that changes
+  // either value, but this re-validates on every format change in case some
+  // future code path ever sets `format` directly without going through them.
   useEffect(() => {
     setState((prev) => withValidTemplate(prev));
   }, [state.format]);
@@ -137,7 +128,7 @@ export function Studio() {
 
   const ctxValue: StudioContextValue = useMemo(
     () => ({ state, updateState, methodOverridden, setMethodOverridden }),
-    [state, methodOverridden],
+    [state, updateState, methodOverridden],
   );
 
   return (
@@ -165,6 +156,11 @@ export function Studio() {
             className="flex flex-1 items-start justify-center overflow-auto bg-muted/30 p-6"
           >
             <div className="w-full max-w-xl rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm">
+              {/* Test-support seam: exposes the current template id independent of
+                  fetch loading state so tests can assert on it directly. */}
+              <span className="sr-only" data-testid="current-template">
+                {state.template}
+              </span>
               <h2 className="mb-2 font-medium">Fetched data (temporary preview)</h2>
               <p className="mb-3 text-xs text-muted-foreground">
                 Real PreviewStage rendering lands in Task 10 — this JSON dump proves the data

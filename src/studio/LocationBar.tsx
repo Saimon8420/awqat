@@ -22,7 +22,7 @@ import {
   type CitySearchResult,
 } from "@/lib/geo";
 import { getMethods } from "@/lib/miqaat";
-import { useStudio } from "./Studio";
+import { useStudio } from "./context";
 
 const DEBOUNCE_MS = 300;
 
