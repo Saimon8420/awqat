@@ -1,0 +1,49 @@
+/*
+ * Awqat font bundle.
+ *
+ * Font files are NOT hand-downloaded/vendored — they ship as npm packages
+ * (@fontsource-variable/geist, @fontsource/noto-sans-bengali,
+ * @fontsource/amiri) and are pulled in here via their CSS entrypoints.
+ * Vite/esbuild inlines the referenced woff2 files from node_modules at
+ * build time, so no binary assets live in this repo.
+ *
+ * Three script families are covered:
+ *  - Latin display  -> Geist Variable   (already imported in src/index.css)
+ *  - Bengali        -> Noto Sans Bengali
+ *  - Arabic         -> Amiri
+ *
+ * Only the weights templates actually use (400/regular, 700/bold) are
+ * imported per script to keep the bundle lean.
+ */
+
+/* Noto Sans Bengali: regular + bold, Bengali script subset only. */
+@import "@fontsource/noto-sans-bengali/bengali-400.css";
+@import "@fontsource/noto-sans-bengali/bengali-700.css";
+
+/* Amiri: regular + bold Arabic text, Arabic script subset only. */
+@import "@fontsource/amiri/arabic-400.css";
+@import "@fontsource/amiri/arabic-700.css";
+
+/*
+ * Per-language font stacks. Templates pick a family via
+ * `var(--font-latin|--font-bengali|--font-arabic)` or the matching
+ * `.font-latin|.font-bengali|.font-arabic` utility class, keyed off the
+ * calendar language (see src/lib/i18n.ts Lang: "en" | "bn" | "ar").
+ */
+:root {
+  --font-latin: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-bengali: "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: "Amiri", "Traditional Arabic", serif;
+}
+
+.font-latin {
+  font-family: var(--font-latin);
+}
+
+.font-bengali {
+  font-family: var(--font-bengali);
+}
+
+.font-arabic {
+  font-family: var(--font-arabic);
+}

@@ -1,0 +1,71 @@
+import type React from "react";
+import type { Countdowns, MonthlyResponse, QiblaData } from "@/lib/miqaat";
+import type { SpecialType } from "@/lib/calendar";
+import type { StudioState } from "@/lib/state";
+import type { ThemeTokens } from "./themes";
+
+export type TemplateProps = {
+  monthly: MonthlyResponse;
+  qibla?: QiblaData;
+  specialDays: Record<string, SpecialType[]>;
+  countdowns?: Countdowns;
+  state: StudioState;
+  theme: ThemeTokens;
+};
+
+export type TemplateDef = {
+  id: string;
+  name: string;
+  lane: "personal" | "organization";
+  format: "daily" | "monthly" | "year";
+  Component: React.FC<TemplateProps>;
+  thumbnail?: string;
+};
+
+// Stub components — real templates land in Tasks 10-12. These placeholders
+// exist purely so the registry/format filters have at least one entry per
+// format and the lane filter has something to narrow.
+const StubDaily: React.FC<TemplateProps> = () => null;
+const StubMonthly: React.FC<TemplateProps> = () => null;
+const StubMonthlyOrg: React.FC<TemplateProps> = () => null;
+const StubYear: React.FC<TemplateProps> = () => null;
+
+export const TEMPLATES: TemplateDef[] = [
+  {
+    id: "daily-classic",
+    name: "Daily Classic",
+    lane: "personal",
+    format: "daily",
+    Component: StubDaily,
+  },
+  {
+    id: "monthly-classic",
+    name: "Monthly Classic",
+    lane: "personal",
+    format: "monthly",
+    Component: StubMonthly,
+  },
+  {
+    id: "monthly-masjid",
+    name: "Monthly Masjid Schedule",
+    lane: "organization",
+    format: "monthly",
+    Component: StubMonthlyOrg,
+  },
+  {
+    id: "year-overview",
+    name: "Year Overview",
+    lane: "personal",
+    format: "year",
+    Component: StubYear,
+  },
+];
+
+export function templatesFor(
+  format: TemplateDef["format"],
+  lane?: TemplateDef["lane"],
+): TemplateDef[] {
+  return TEMPLATES.filter(
+    (t) => t.format === format && (lane === undefined || t.lane === lane),
+  );
+}
