@@ -119,43 +119,57 @@ export function LocationBar() {
     <div className="flex flex-col gap-2">
       <Label htmlFor="location-search">Location</Label>
 
-      <Popover open={resultsOpen} onOpenChange={setResultsOpen}>
-        <PopoverTrigger
-          render={
-            <Input
-              id="location-search"
-              value={query}
-              placeholder="Search for a city…"
-              autoComplete="off"
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          }
+      <div className="relative">
+        <Input
+          id="location-search"
+          value={query}
+          placeholder="Search for a city…"
+          autoComplete="off"
+          role="combobox"
+          aria-expanded={resultsOpen}
+          aria-autocomplete="list"
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => {
+            if (results.length > 0 || searching || searchError) setResultsOpen(true);
+          }}
+          onBlur={() => setResultsOpen(false)}
         />
-        <PopoverContent align="start" className="p-1">
-          {searching && <p className="px-2 py-1.5 text-xs text-muted-foreground">Searching…</p>}
-          {searchError && (
-            <p className="px-2 py-1.5 text-xs text-destructive" role="alert">
-              {searchError}
-            </p>
-          )}
-          {!searching &&
-            !searchError &&
-            results.map((r) => (
-              <button
-                key={`${r.name}-${r.lat}-${r.lon}`}
-                type="button"
-                className="flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-                onClick={() => selectCity(r)}
-              >
-                <span>{r.name}</span>
-                <span className="text-xs text-muted-foreground">{r.country}</span>
-              </button>
-            ))}
-          {!searching && !searchError && results.length === 0 && (
-            <p className="px-2 py-1.5 text-xs text-muted-foreground">No matches yet.</p>
-          )}
-        </PopoverContent>
-      </Popover>
+        {resultsOpen && (
+          <div
+            className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+            // Keep focus on the input so a result click fires before the blur closes the list.
+            onMouseDown={(e) => e.preventDefault()}
+            role="listbox"
+          >
+            {searching && (
+              <p className="px-2 py-1.5 text-xs text-muted-foreground">Searching…</p>
+            )}
+            {searchError && (
+              <p className="px-2 py-1.5 text-xs text-destructive" role="alert">
+                {searchError}
+              </p>
+            )}
+            {!searching &&
+              !searchError &&
+              results.map((r) => (
+                <button
+                  key={`${r.name}-${r.lat}-${r.lon}`}
+                  type="button"
+                  role="option"
+                  aria-selected={false}
+                  className="flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                  onClick={() => selectCity(r)}
+                >
+                  <span>{r.name}</span>
+                  <span className="text-xs text-muted-foreground">{r.country}</span>
+                </button>
+              ))}
+            {!searching && !searchError && results.length === 0 && (
+              <p className="px-2 py-1.5 text-xs text-muted-foreground">No matches yet.</p>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center gap-2">
         <Button

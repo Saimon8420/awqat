@@ -71,10 +71,9 @@ describe("Studio", () => {
       { id: "Egyptian", name: "Egyptian" },
     ]);
     // Both results resolve from a single debounced search fired automatically
-    // for the default city query on mount. Re-clicking the (base-ui) trigger
-    // re-opens the already-fetched result list, which lets the test select a
-    // second, different city without needing to simulate real typing into a
-    // controlled base-ui popover-trigger input (unsupported by fireEvent).
+    // for the default city query ("Dhaka") on mount. Re-focusing the input
+    // re-opens the already-fetched result list, letting the test select a
+    // second, different city.
     vi.mocked(searchCity).mockResolvedValue([
       { name: "Dhaka", lat: 23.81, lon: 90.41, country: "Bangladesh" },
       { name: "Cairo", lat: 30.04, lon: 31.24, country: "Egypt" },
@@ -110,13 +109,27 @@ describe("Studio", () => {
 
     // Selecting a different city no longer resets the method: it stays the
     // overridden value even though defaultMethod("Egypt") would say
-    // "MuslimWorldLeague".
-    fireEvent.click(locationInput);
+    // "MuslimWorldLeague". Focusing the input re-opens the already-fetched list.
+    fireEvent.focus(locationInput);
     await waitFor(() => expect(screen.getByText("Egypt")).toBeInTheDocument(), { timeout: 2000 });
     fireEvent.click(screen.getByText("Egypt").closest("button")!);
     await waitFor(() => expect(main).toHaveTextContent(/"city":\s*"Cairo"/));
     expect(main).toHaveTextContent(/"method":\s*"Egyptian"/);
     expect(main).not.toHaveTextContent(/"method":\s*"MuslimWorldLeague"/);
+  });
+
+  it("runs a debounced city search as the user types and shows results", async () => {
+    // Regression guard: the search field must be a real text input (typing must
+    // reach onChange), not a base-ui popover trigger that renders as a button.
+    vi.mocked(searchCity).mockResolvedValue([
+      { name: "Cairo", lat: 30.04, lon: 31.24, country: "Egypt" },
+    ]);
+    render(<Studio />);
+    const locationInput = screen.getByLabelText("Location");
+    fireEvent.change(locationInput, { target: { value: "Cairo" } });
+    expect((locationInput as HTMLInputElement).value).toBe("Cairo");
+    await waitFor(() => expect(searchCity).toHaveBeenCalledWith("Cairo"));
+    await waitFor(() => expect(screen.getByText("Cairo")).toBeInTheDocument());
   });
 
   it("falls back to a valid template id when the format changes", async () => {
