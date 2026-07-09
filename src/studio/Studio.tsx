@@ -44,6 +44,12 @@ type FetchState = {
   specialDays: Record<string, SpecialType[]>;
   loading: boolean;
   error: string | null;
+  /**
+   * All 12 months of `state.year` (Jan..Dec, index 0..11), fetched only
+   * while `state.format === "year"` by the dedicated effect below. `null`
+   * until that fetch resolves (or when the year format isn't active).
+   */
+  months: MonthlyResponse[] | null;
 };
 
 const INITIAL_FETCH_STATE: FetchState = {
@@ -55,6 +61,7 @@ const INITIAL_FETCH_STATE: FetchState = {
   // one-render flash of empty data before the loading indicator appears.
   loading: true,
   error: null,
+  months: null,
 };
 
 export function Studio() {
@@ -111,14 +118,15 @@ export function Studio() {
     ])
       .then(([monthly, qibla, countdowns]) => {
         if (cancelled) return;
-        setFetchState({
+        setFetchState((s) => ({
+          ...s,
           monthly,
           qibla,
           countdowns,
           specialDays: specialDaysForMonth(monthly.days),
           loading: false,
           error: null,
-        });
+        }));
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -132,10 +140,52 @@ export function Studio() {
     return () => {
       cancelled = true;
     };
-    // Year format defers the full 12-month fetch to Task 12; for now every
-    // format just fetches the current month so the studio has real data to
-    // prove the wiring works.
+    // Every format (including "year") fetches the current month here so
+    // `monthly`/`qibla`/`countdowns` are always populated for TemplateProps;
+    // the year format's full 12-month grid is fetched separately below.
   }, [state.lat, state.lon, state.year, month, state.method, state.madhab, state.format]);
+
+  // Year format: fetch all 12 months of state.year in parallel for the
+  // year-overview poster's per-month panels. getMonthly caches per
+  // (lat,lon,year,month,method,madhab), so revisiting the year format (or
+  // re-running this effect after an unrelated dep change) is cheap. Uses its
+  // own `cancelled` guard, independent of the effect above, so a location
+  // change mid-flight can't let a stale 12-month result overwrite newer data.
+  useEffect(() => {
+    if (state.format !== "year") return;
+
+    let cancelled = false;
+    setFetchState((s) => ({ ...s, loading: true, error: null }));
+
+    Promise.all(
+      Array.from({ length: 12 }, (_, i) =>
+        getMonthly({
+          lat: state.lat,
+          lon: state.lon,
+          year: state.year,
+          month: i + 1,
+          method: state.method,
+          madhab: state.madhab,
+        }),
+      ),
+    )
+      .then((months) => {
+        if (cancelled) return;
+        setFetchState((s) => ({ ...s, months, loading: false, error: null }));
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setFetchState((s) => ({
+          ...s,
+          loading: false,
+          error: err instanceof Error ? err.message : String(err),
+        }));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [state.lat, state.lon, state.year, state.method, state.madhab, state.format]);
 
   // Auto-suggest the Ramadan template: once per fetched month, if the month
   // is Ramadan-dominant and the user hasn't manually picked a template this
@@ -214,6 +264,7 @@ export function Studio() {
               qibla={fetchState.qibla}
               countdowns={fetchState.countdowns}
               specialDays={fetchState.specialDays}
+              months={fetchState.months}
               loading={fetchState.loading}
               error={fetchState.error}
             />

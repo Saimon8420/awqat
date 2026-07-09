@@ -8,6 +8,7 @@ import { OrgDaily } from "./daily/OrgDaily";
 import { PersonalMonthly } from "./monthly/PersonalMonthly";
 import { OrgMonthly } from "./monthly/OrgMonthly";
 import { RamadanMonthly } from "./monthly/RamadanMonthly";
+import { YearPoster } from "./year/YearPoster";
 
 export type TemplateProps = {
   monthly: MonthlyResponse;
@@ -16,6 +17,13 @@ export type TemplateProps = {
   countdowns?: Countdowns;
   state: StudioState;
   theme: ThemeTokens;
+  /**
+   * All 12 months (Jan..Dec, index 0..11) of `state.year`, fetched only for
+   * the "year" format (see Studio's year-fetch effect). `undefined` while
+   * unfetched/not applicable; only `year-overview`-format templates use it.
+   * Existing daily/monthly templates ignore it.
+   */
+  months?: MonthlyResponse[];
 };
 
 export type TemplateDef = {
@@ -26,11 +34,6 @@ export type TemplateDef = {
   Component: React.FC<TemplateProps>;
   thumbnail?: string;
 };
-
-// Stub component — the Year format template lands in Task 12. This
-// placeholder exists purely so the registry/format filters have at least
-// one entry for "year" and the lane filter has something to narrow.
-const StubYear: React.FC<TemplateProps> = () => null;
 
 export const TEMPLATES: TemplateDef[] = [
   {
@@ -73,7 +76,7 @@ export const TEMPLATES: TemplateDef[] = [
     name: "Year Overview",
     lane: "personal",
     format: "year",
-    Component: StubYear,
+    Component: YearPoster,
   },
 ];
 

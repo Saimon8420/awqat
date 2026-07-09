@@ -208,6 +208,20 @@ describe("Studio", () => {
     });
   });
 
+  it("fetches all 12 months in parallel when the year format is selected", async () => {
+    render(<Studio />);
+    fireEvent.click(screen.getByRole("tab", { name: "Year" }));
+
+    await waitFor(() => {
+      const monthsRequested = new Set(
+        vi.mocked(getMonthly).mock.calls.map((call) => call[0].month),
+      );
+      for (let month = 1; month <= 12; month++) {
+        expect(monthsRequested).toContain(month);
+      }
+    });
+  });
+
   it("does not auto-suggest the Ramadan template once the user has manually picked a template", async () => {
     vi.mocked(getMonthly).mockResolvedValue(ramadanMonthly);
     render(<Studio />);

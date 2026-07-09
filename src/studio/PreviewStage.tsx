@@ -11,17 +11,19 @@ type PreviewStageProps = {
   qibla: QiblaData | null;
   countdowns: Countdowns | null;
   specialDays: Record<string, SpecialType[]>;
+  months: MonthlyResponse[] | null;
   loading: boolean;
   error: string | null;
 };
 
 // Intrinsic export-canvas pixel size per format. Daily defaults to a 9:16
-// "Story" canvas (1080x1920) per the task brief; monthly/year get a
-// reasonable placeholder size until their templates land in Tasks 11-12.
+// "Story" canvas (1080x1920) per the task brief; monthly gets a portrait
+// poster size. Year uses a landscape A3-proportioned canvas (420x297mm at
+// 96dpi) so the 4x3 grid of month panels in YearPoster has room to breathe.
 const INTRINSIC_SIZE: Record<StudioState["format"], { width: number; height: number }> = {
   daily: { width: 1080, height: 1920 },
   monthly: { width: 1080, height: 1350 },
-  year: { width: 1080, height: 1080 },
+  year: { width: 1587, height: 1123 },
 };
 
 const STAGE_PADDING = 32;
@@ -36,6 +38,7 @@ export function PreviewStage({
   qibla,
   countdowns,
   specialDays,
+  months,
   loading,
   error,
 }: PreviewStageProps) {
@@ -107,6 +110,7 @@ export function PreviewStage({
               qibla={qibla ?? undefined}
               countdowns={countdowns ?? undefined}
               specialDays={specialDays}
+              months={months ?? undefined}
               state={state}
               theme={theme}
             />
