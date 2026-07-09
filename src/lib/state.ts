@@ -25,7 +25,7 @@ export const DEFAULT_STATE: StudioState = {
   lat: 23.81,
   lon: 90.41,
   city: "Dhaka",
-  method: "MWL",
+  method: "MuslimWorldLeague",
   madhab: "shafi",
   year: new Date().getFullYear(),
   format: "daily",
