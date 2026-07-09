@@ -19,8 +19,10 @@ import {
 import { isRamadanMonth, specialDaysForMonth, type SpecialType } from "@/lib/calendar";
 import { LocationBar } from "./LocationBar";
 import { FormatTabs } from "./FormatTabs";
+import { DateControls } from "./DateControls";
 import { PreviewStage } from "./PreviewStage";
 import { TemplateGallery } from "./TemplateGallery";
+import { CustomizePanel } from "./CustomizePanel";
 import { StudioContext, type StudioContextValue } from "./context";
 
 /** Ensures `template` is a valid id for `format`, falling back to the first template for that format. */
@@ -98,8 +100,6 @@ export function Studio() {
     setState((prev) => withValidTemplate(prev));
   }, [state.format]);
 
-  const month = useMemo(() => new Date().getMonth() + 1, []);
-
   useEffect(() => {
     let cancelled = false;
     setFetchState((s) => ({ ...s, loading: true, error: null }));
@@ -109,7 +109,7 @@ export function Studio() {
         lat: state.lat,
         lon: state.lon,
         year: state.year,
-        month,
+        month: state.month,
         method: state.method,
         madhab: state.madhab,
       }),
@@ -140,10 +140,10 @@ export function Studio() {
     return () => {
       cancelled = true;
     };
-    // Every format (including "year") fetches the current month here so
+    // Every format (including "year") fetches the selected month here so
     // `monthly`/`qibla`/`countdowns` are always populated for TemplateProps;
     // the year format's full 12-month grid is fetched separately below.
-  }, [state.lat, state.lon, state.year, month, state.method, state.madhab, state.format]);
+  }, [state.lat, state.lon, state.year, state.month, state.method, state.madhab, state.format]);
 
   // Year format: fetch all 12 months of state.year in parallel for the
   // year-overview poster's per-month panels. getMonthly caches per
@@ -232,6 +232,7 @@ export function Studio() {
 
             <LocationBar />
             <FormatTabs />
+            <DateControls />
 
             <div className="flex flex-1 flex-col overflow-y-auto">
               <TemplateGallery />
@@ -270,8 +271,8 @@ export function Studio() {
             />
           </main>
 
-          <aside className="w-72 shrink-0 overflow-y-auto border-l border-border p-4 text-xs text-muted-foreground">
-            Customize panel lands in Task 14.
+          <aside className="w-72 shrink-0 overflow-y-auto border-l border-border p-4">
+            <CustomizePanel />
           </aside>
         </div>
 

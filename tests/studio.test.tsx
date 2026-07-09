@@ -222,6 +222,47 @@ describe("Studio", () => {
     });
   });
 
+  it("refetches with the new month when the Date controls' Month select changes", async () => {
+    const MONTH_NAMES = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    // Pick a target month guaranteed to differ from whatever month the
+    // Studio initializes to (DEFAULT_STATE.month is the real current
+    // month), so this assertion is meaningful regardless of run date.
+    const currentMonth = new Date().getMonth() + 1;
+    const targetMonth = currentMonth === 3 ? 5 : 3;
+    const targetLabel = MONTH_NAMES[targetMonth - 1];
+
+    render(<Studio />);
+    await waitFor(() => expect(getMonthly).toHaveBeenCalled());
+    vi.mocked(getMonthly).mockClear();
+
+    const monthTrigger = screen.getByLabelText("Month");
+    fireEvent.click(monthTrigger);
+    await waitFor(() => expect(screen.getByText(targetLabel)).toBeInTheDocument());
+    const option = screen.getByText(targetLabel).closest('[role="option"]')!;
+    // base-ui's Select item only commits a mouse click preceded by a
+    // pointerdown on the same element (see the "Advanced" method-select test
+    // above for the same pattern).
+    fireEvent.pointerDown(option, { pointerType: "mouse" });
+    fireEvent.click(option);
+
+    await waitFor(() => {
+      expect(getMonthly).toHaveBeenCalledWith(expect.objectContaining({ month: targetMonth }));
+    });
+  });
+
   it("does not auto-suggest the Ramadan template once the user has manually picked a template", async () => {
     vi.mocked(getMonthly).mockResolvedValue(ramadanMonthly);
     render(<Studio />);

@@ -14,7 +14,7 @@ import { LANG_FONT_CLASS, PRAYER_ROW_KEYS, ROW_LABEL_KEYS, pickToday } from "./s
  */
 export function OrgDaily({ monthly, qibla, state, theme }: TemplateProps) {
   const { lang, hour12, showRows, showQibla, org } = state;
-  const today = pickToday(monthly);
+  const today = pickToday(monthly, state);
 
   const rootStyle: CSSProperties = {
     backgroundColor: theme.bg,

@@ -7,6 +7,10 @@ export type StudioState = {
   method?: string;
   madhab?: string;
   year: number;
+  /** 1-12 (January = 1). Drives which month is fetched/previewed. */
+  month: number;
+  /** 1-31. Used by daily-format templates to pick a specific day within `month`. */
+  day: number;
   format: "daily" | "monthly" | "year";
   template: string;
   lang: Lang;
@@ -32,6 +36,8 @@ export const DEFAULT_STATE: StudioState = {
   method: "MuslimWorldLeague",
   madhab: "shafi",
   year: new Date().getFullYear(),
+  month: new Date().getMonth() + 1,
+  day: new Date().getDate(),
   format: "daily",
   template: "classic",
   lang: "en",
@@ -62,6 +68,8 @@ const SCALAR_KEYS = [
   "method",
   "madhab",
   "year",
+  "month",
+  "day",
   "format",
   "template",
   "lang",
@@ -74,7 +82,7 @@ const SCALAR_KEYS = [
   "showQibla",
 ] as const;
 
-const NUMBER_KEYS = new Set(["lat", "lon", "year"]);
+const NUMBER_KEYS = new Set(["lat", "lon", "year", "month", "day"]);
 const BOOLEAN_KEYS = new Set(["hour12", "showQibla"]);
 
 export function encodeState(s: StudioState): string {
