@@ -23,6 +23,7 @@ import { DateControls } from "./DateControls";
 import { PreviewStage } from "./PreviewStage";
 import { TemplateGallery } from "./TemplateGallery";
 import { CustomizePanel } from "./CustomizePanel";
+import { ExportBar } from "./ExportBar";
 import { StudioContext, type StudioContextValue } from "./context";
 
 /** Ensures `template` is a valid id for `format`, falling back to the first template for that format. */
@@ -290,9 +291,7 @@ export function Studio() {
           </aside>
         </div>
 
-        <footer className="flex h-14 shrink-0 items-center border-t border-border px-4 text-xs text-muted-foreground">
-          Export bar lands in Task 16.
-        </footer>
+        <ExportBar />
       </div>
     </StudioContext.Provider>
   );

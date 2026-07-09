@@ -17,15 +17,27 @@ type PreviewStageProps = {
   error: string | null;
 };
 
-// Intrinsic export-canvas pixel size per format. Daily defaults to a 9:16
-// "Story" canvas (1080x1920) per the task brief; monthly gets a portrait
-// poster size. Year uses a landscape A3-proportioned canvas (420x297mm at
-// 96dpi) so the 4x3 grid of month panels in YearPoster has room to breathe.
-const INTRINSIC_SIZE: Record<StudioState["format"], { width: number; height: number }> = {
-  daily: { width: 1080, height: 1920 },
-  monthly: { width: 1080, height: 1350 },
-  year: { width: 1587, height: 1123 },
+// Intrinsic export-canvas pixel size per format/ratio. The `daily` format
+// offers a choice of export aspect ratios (see `ExportBar`, Task 16) — Story
+// 9:16, Square 1:1, Post 4:5 — all sharing the same 1080px width so a single
+// `targetWidth` works for all three. `monthly` gets a fixed portrait poster
+// size; `year` uses a landscape A3-proportioned canvas (420x297mm at 96dpi)
+// so the 4x3 grid of month panels in YearPoster has room to breathe. Neither
+// participates in the ratio toggle.
+const DAILY_RATIO_SIZE: Record<
+  NonNullable<StudioState["exportRatio"]>,
+  { width: number; height: number }
+> = {
+  story: { width: 1080, height: 1920 },
+  square: { width: 1080, height: 1080 },
+  post: { width: 1080, height: 1350 },
 };
+
+function intrinsicSizeFor(state: StudioState): { width: number; height: number } {
+  if (state.format === "daily") return DAILY_RATIO_SIZE[state.exportRatio ?? "story"];
+  if (state.format === "monthly") return { width: 1080, height: 1350 };
+  return { width: 1587, height: 1123 };
+}
 
 const STAGE_PADDING = 32;
 
@@ -47,7 +59,7 @@ export function PreviewStage({
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
-  const intrinsic = INTRINSIC_SIZE[state.format];
+  const intrinsic = intrinsicSizeFor(state);
 
   useEffect(() => {
     const el = containerRef.current;

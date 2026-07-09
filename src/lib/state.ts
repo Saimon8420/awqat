@@ -27,6 +27,12 @@ export type StudioState = {
   org?: { name?: string; address?: string; tagline?: string; logo?: string };
   personal?: { greeting?: string; dua?: string };
   showQibla: boolean;
+  /**
+   * Export aspect ratio for the `daily` format's `#export-node` canvas (see
+   * `ExportBar`/`PreviewStage`, Task 16). Ignored by `monthly` (portrait) and
+   * `year` (A3 landscape), which always use their own fixed canvas size.
+   */
+  exportRatio?: "story" | "square" | "post";
 };
 
 export const DEFAULT_STATE: StudioState = {
@@ -54,6 +60,7 @@ export const DEFAULT_STATE: StudioState = {
     isha: true,
   },
   showQibla: false,
+  exportRatio: "story",
 };
 
 const STORAGE_KEY = "awqat:state";
@@ -80,6 +87,7 @@ const SCALAR_KEYS = [
   "motif",
   "gradient",
   "showQibla",
+  "exportRatio",
 ] as const;
 
 const NUMBER_KEYS = new Set(["lat", "lon", "year", "month", "day"]);
