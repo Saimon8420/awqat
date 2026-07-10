@@ -1,7 +1,6 @@
-import { useRef, type ChangeEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { ImageUploadField } from "@/components/ui/image-upload";
 import { TEMPLATES } from "@/templates/registry";
 import { useStudio } from "./context";
 
@@ -22,23 +21,8 @@ const TEXTAREA_CLASS =
  */
 export function PersonalizeFields() {
   const { state, updateState } = useStudio();
-  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const lane = TEMPLATES.find((t) => t.id === state.template)?.lane;
-
-  function handleLogoUpload(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        updateState({ org: { ...state.org, logo: reader.result } });
-      }
-    };
-    reader.readAsDataURL(file);
-    // Allow re-selecting the same file later (e.g. after clearing).
-    e.target.value = "";
-  }
 
   if (lane === "organization") {
     const org = state.org ?? {};
@@ -50,27 +34,13 @@ export function PersonalizeFields() {
           <Label htmlFor="org-logo-input" className="text-xs font-normal text-muted-foreground">
             Logo
           </Label>
-          <input
-            ref={logoInputRef}
+          <ImageUploadField
             id="org-logo-input"
-            type="file"
-            accept="image/*"
-            onChange={handleLogoUpload}
-            className="text-xs text-muted-foreground file:mr-2 file:rounded-md file:border-0 file:bg-secondary file:px-2 file:py-1 file:text-xs file:font-medium file:text-secondary-foreground"
+            label="Upload a logo"
+            value={org.logo}
+            onChange={(dataUrl) => updateState({ org: { ...state.org, logo: dataUrl } })}
+            onClear={() => updateState({ org: { ...state.org, logo: undefined } })}
           />
-          {org.logo && (
-            <div className="flex items-center gap-2">
-              <img src={org.logo} alt="" className="h-10 w-10 rounded-md object-cover" />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => updateState({ org: { ...state.org, logo: undefined } })}
-              >
-                Clear logo
-              </Button>
-            </div>
-          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
