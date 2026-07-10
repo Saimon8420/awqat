@@ -18,17 +18,6 @@ const RATIOS: { value: NonNullable<StudioState["exportRatio"]>; label: string }[
   { value: "post", label: "Post 4:5" },
 ];
 
-// PNG capture width per format, in pixels — passed as `targetWidth` to
-// `exportPng`/`exportScale`. Daily's three ratios (see RATIOS above) all
-// share a 1080px canvas width, so one value covers all of them; year's A3
-// landscape canvas is wider (1587px) and doesn't participate in the ratio
-// toggle at all.
-const TARGET_WIDTH: Record<StudioState["format"], number> = {
-  daily: 1080,
-  monthly: 1080,
-  year: 1587,
-};
-
 function slugify(value: string): string {
   return (
     value
@@ -122,7 +111,7 @@ export function ExportBar({ variant = "bar" }: { variant?: "bar" | "sheet" } = {
       if (!node) throw new Error("Nothing to export yet — the preview hasn't rendered.");
 
       const filename = `awqat-${state.format}-${slugify(state.city)}.png`;
-      await exportPng(node, { targetWidth: TARGET_WIDTH[state.format], filename });
+      await exportPng(node, { filename });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

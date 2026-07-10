@@ -14,11 +14,36 @@ export function exportScale(node: { width: number }, targetWidth: number): numbe
   return targetWidth / node.width;
 }
 
+// Output pixel-density multiplier for single-image captures. #export-node is
+// authored at a ~1080–1587px "1x" design width; capturing at 3x yields a
+// crisp, print-quality raster (and a healthy file size) instead of the soft,
+// tiny 1x export.
+const EXPORT_PIXEL_RATIO = 3;
+
 /**
- * Captures `node` (expected to be the unscaled `#export-node`, per
- * `PreviewStage` — never the scaled wrapper around it) to a PNG at
- * `opts.targetWidth` pixels wide, then triggers a browser download named
- * `opts.filename`.
+ * Options shared by the PNG and PDF captures. Two things matter here:
+ *  - `width`/`height` pin the capture to the node's own intrinsic box, so the
+ *    output is tightly cropped to the content — no surrounding whitespace.
+ *  - `style.transform: none` neutralizes the preview-fit `transform: scale(...)`
+ *    that `PreviewStage` applies to shrink the node into the on-screen stage.
+ *    Without this override html-to-image bakes that scale into the clone and
+ *    the template renders shrunk into the top-left corner of the canvas (the
+ *    "content in one quadrant, rest empty" bug).
+ */
+function captureOptions(node: HTMLElement, pixelRatio: number) {
+  return {
+    pixelRatio,
+    width: node.offsetWidth,
+    height: node.offsetHeight,
+    style: { transform: "none", transformOrigin: "top left", margin: "0" },
+    cacheBust: true,
+  };
+}
+
+/**
+ * Captures `node` (the `#export-node`, per `PreviewStage`) to a PNG tightly
+ * cropped to its intrinsic size and rendered at `EXPORT_PIXEL_RATIO`, then
+ * triggers a browser download named `opts.filename`.
  *
  * Awaits `document.fonts.ready` first so the bundled Bengali/Arabic/Latin
  * webfonts are guaranteed to be loaded before html-to-image serializes the
@@ -27,11 +52,10 @@ export function exportScale(node: { width: number }, targetWidth: number): numbe
  */
 export async function exportPng(
   node: HTMLElement,
-  opts: { targetWidth: number; filename: string },
+  opts: { filename: string },
 ): Promise<void> {
   await document.fonts.ready;
-  const pixelRatio = exportScale({ width: node.offsetWidth }, opts.targetWidth);
-  const dataUrl = await toPng(node, { pixelRatio, cacheBust: true });
+  const dataUrl = await toPng(node, captureOptions(node, EXPORT_PIXEL_RATIO));
   saveAs(dataUrl, opts.filename);
 }
 
@@ -66,7 +90,9 @@ export async function exportPdf(
   opts: { size: "a4" | "a3"; orientation: "portrait" | "landscape"; filename: string },
 ): Promise<void> {
   await document.fonts.ready;
-  const dataUrl = await toPng(node, { pixelRatio: 2, cacheBust: true });
+  // Same transform-neutralizing / tight-crop capture as exportPng (2x is
+  // ample once it's embedded in a vector PDF page and keeps the file lean).
+  const dataUrl = await toPng(node, captureOptions(node, 2));
 
   const pdf = new jsPDF({ format: opts.size, orientation: opts.orientation, unit: "pt" });
   const page = { width: pdf.internal.pageSize.getWidth(), height: pdf.internal.pageSize.getHeight() };
