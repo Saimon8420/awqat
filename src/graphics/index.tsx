@@ -200,20 +200,100 @@ export const BismillahOrnament: FC<MotifIconProps> = (props) => (
   <CalligraphyOrnament {...props} text="Bismillah" />
 );
 
+/**
+ * A mihrab (prayer-niche) arch drawn as a hollow frame — a pointed ogee
+ * arch springing from two jambs. Meant to be stretched to the card's full
+ * bounds so the times sit *inside* the niche, the way a mihrab frames the
+ * qibla wall. Stroke-only so it reads as an architectural outline.
+ */
+export const MihrabArch: FC<MotifIconProps> = ({ className, color }) => (
+  <svg
+    viewBox="0 0 100 140"
+    className={className}
+    style={motifStyle(color)}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.4"
+    aria-hidden="true"
+    preserveAspectRatio="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* Outer niche outline: up the left jamb, ogee shoulders to a point, down the right jamb. */}
+    <path d="M10 138 V54 C10 34 24 22 42 14 C48 11 48 4 50 2 C52 4 52 11 58 14 C76 22 90 34 90 54 V138" />
+    {/* Inner keyline, offset inward for a carved-double-arch feel. */}
+    <path
+      d="M17 138 V56 C17 39 29 29 45 21 C48 19 48 13 50 11 C52 13 52 19 55 21 C71 29 83 39 83 56 V138"
+      strokeWidth="0.8"
+      strokeOpacity="0.6"
+    />
+    {/* Keystone flourish at the apex. */}
+    <circle cx="50" cy="8" r="2.4" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+/**
+ * A tileable zellij-style eight-point star lattice — interlocking stars and
+ * cross tiles, the classic Islamic geometric field. Renders a repeating
+ * `<pattern>` so it fills any size as a proper mosaic.
+ */
+export const ZellijPattern: FC<MotifIconProps> = ({ className, color }) => {
+  const id = useId();
+  const patternId = `zellij-${id}`;
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={className}
+      style={motifStyle(color)}
+      fill="currentColor"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <pattern id={patternId} width="40" height="40" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="currentColor" strokeWidth="1">
+            {/* Eight-point star: two overlaid squares. */}
+            <path d="M20 4 L26 14 L36 20 L26 26 L20 36 L14 26 L4 20 L14 14 Z" />
+            <path d="M20 8 L24.5 15.5 L32 20 L24.5 24.5 L20 32 L15.5 24.5 L8 20 L15.5 15.5 Z" />
+            {/* Corner quarter-stars knit the tiles together across the seam. */}
+            <path d="M0 0 L6 0 L0 6 Z" />
+            <path d="M40 0 L34 0 L40 6 Z" />
+            <path d="M0 40 L6 40 L0 34 Z" />
+            <path d="M40 40 L34 40 L40 34 Z" />
+          </g>
+        </pattern>
+      </defs>
+      <rect x="0" y="0" width="100" height="100" fill={`url(#${patternId})`} />
+    </svg>
+  );
+};
+
+/**
+ * How a motif wants to be placed by `DecorLayer`:
+ * - `feature`: one large glyph anchored in a corner, behind a soft glow.
+ * - `texture`: a full-bleed repeating lattice at low opacity.
+ * - `border`: a repeating strip along the top and bottom edges.
+ * - `frame`: stretched to the full card bounds, framing the content.
+ * - `banner`: a wide horizontal ornament near the foot of the card.
+ */
+export type MotifKind = "feature" | "texture" | "border" | "frame" | "banner";
+
 export type Motif = {
   id: string;
   name: string;
   Svg: FC<MotifIconProps>;
+  kind: MotifKind;
 };
 
 export const MOTIFS: Motif[] = [
-  { id: "crescent", name: "Crescent Moon", Svg: Crescent },
-  { id: "dome", name: "Dome", Svg: Dome },
-  { id: "mosque", name: "Mosque Silhouette", Svg: Mosque },
-  { id: "lantern", name: "Lantern (Fanoos)", Svg: Lantern },
-  { id: "girih", name: "Girih Pattern", Svg: GirihPattern },
-  { id: "star-border", name: "Star & Crescent Border", Svg: StarBorder },
-  { id: "ramadan-kareem", name: "Ramadan Kareem", Svg: RamadanKareemOrnament },
-  { id: "eid-mubarak", name: "Eid Mubarak", Svg: EidMubarakOrnament },
-  { id: "bismillah", name: "Bismillah", Svg: BismillahOrnament },
+  { id: "crescent", name: "Crescent Moon", Svg: Crescent, kind: "feature" },
+  { id: "arch", name: "Mihrab Arch", Svg: MihrabArch, kind: "frame" },
+  { id: "dome", name: "Dome", Svg: Dome, kind: "feature" },
+  { id: "mosque", name: "Mosque Silhouette", Svg: Mosque, kind: "feature" },
+  { id: "lantern", name: "Lantern (Fanoos)", Svg: Lantern, kind: "feature" },
+  { id: "zellij", name: "Zellij Star Lattice", Svg: ZellijPattern, kind: "texture" },
+  { id: "girih", name: "Girih Pattern", Svg: GirihPattern, kind: "texture" },
+  { id: "star-border", name: "Star & Crescent Border", Svg: StarBorder, kind: "border" },
+  { id: "ramadan-kareem", name: "Ramadan Kareem", Svg: RamadanKareemOrnament, kind: "banner" },
+  { id: "eid-mubarak", name: "Eid Mubarak", Svg: EidMubarakOrnament, kind: "banner" },
+  { id: "bismillah", name: "Bismillah", Svg: BismillahOrnament, kind: "banner" },
 ];
