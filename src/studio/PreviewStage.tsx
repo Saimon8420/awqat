@@ -35,11 +35,29 @@ const DAILY_RATIO_SIZE: Record<
 
 function intrinsicSizeFor(state: StudioState): { width: number; height: number } {
   if (state.format === "daily") return DAILY_RATIO_SIZE[state.exportRatio ?? "story"];
-  if (state.format === "monthly") return { width: 1080, height: 1350 };
+  if (state.format === "monthly") {
+    // Monthly follows the Orientation toggle live: a portrait poster or a
+    // landscape sheet (√2 proportions, so it drops cleanly onto A4/A3).
+    return state.orientation === "landscape"
+      ? { width: 1528, height: 1080 }
+      : { width: 1080, height: 1350 };
+  }
   return { width: 1587, height: 1123 };
 }
 
-const STAGE_PADDING = 32;
+/**
+ * Breathing room around the scaled canvas, read from the container's own
+ * computed padding so the fit math always matches what CSS actually applied
+ * (the stage is tighter on a phone, where every pixel of canvas counts).
+ */
+function stagePadding(el: HTMLElement): { x: number; y: number } {
+  if (typeof getComputedStyle !== "function") return { x: 32, y: 32 };
+  const cs = getComputedStyle(el);
+  return {
+    x: parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight),
+    y: parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom),
+  };
+}
 
 /**
  * The center preview region: a fixed-aspect `#export-node` canvas, scaled
@@ -66,8 +84,9 @@ export function PreviewStage({
     if (!el) return;
 
     const compute = () => {
-      const availW = el.clientWidth - STAGE_PADDING * 2;
-      const availH = el.clientHeight - STAGE_PADDING * 2;
+      const pad = stagePadding(el);
+      const availW = el.clientWidth - pad.x;
+      const availH = el.clientHeight - pad.y;
       const next = Math.min(availW / intrinsic.width, availH / intrinsic.height, 1);
       setScale(next > 0 ? next : 1);
     };
@@ -88,7 +107,7 @@ export function PreviewStage({
   return (
     <div
       ref={containerRef}
-      className="relative flex h-full w-full items-center justify-center overflow-auto p-8"
+      className="relative flex h-full w-full items-center justify-center overflow-auto p-3 lg:p-8"
     >
       {/* In-app-only live countdown chrome: intentionally rendered here,
           outside #export-node, so it never appears in exported images (see
@@ -96,7 +115,7 @@ export function PreviewStage({
           context's `exporting` flag as a belt-and-suspenders seam for Task
           16's export pipeline. */}
       {state.format === "daily" && monthly && (
-        <div className="absolute right-4 top-4 z-10 rounded-full border border-border bg-background/90 px-3 py-1.5 shadow-sm backdrop-blur">
+        <div className="absolute right-2 top-2 z-10 rounded-full border border-border bg-background/90 px-2.5 py-1 text-xs shadow-sm backdrop-blur lg:right-4 lg:top-4 lg:px-3 lg:py-1.5">
           <LiveCountdown monthly={monthly} state={state} frozen={exporting} />
         </div>
       )}

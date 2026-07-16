@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { toBlob } from "html-to-image";
 import { Button } from "@/components/ui/button";
+import { Segmented } from "@/components/ui/segmented";
 import { cn } from "@/lib/utils";
 import { exportPdf, exportPng, exportYearZip } from "@/lib/export";
 import { getMonthly } from "@/lib/miqaat";
@@ -62,8 +63,12 @@ const PDF_DEFAULTS: Record<
 
 // Offscreen container size used by "Download all 12 months" to render each
 // month with the same intrinsic pixel size as PreviewStage's monthly
-// export-node (see `PreviewStage`'s `intrinsicSizeFor`).
-const ALL_MONTHS_NODE_SIZE = { width: 1080, height: 1350 };
+// export-node (see `PreviewStage`'s `intrinsicSizeFor`), matched to the
+// chosen orientation so the batch export mirrors the on-screen poster.
+const ALL_MONTHS_NODE_SIZE = {
+  portrait: { width: 1080, height: 1350 },
+  landscape: { width: 1528, height: 1080 },
+} as const;
 
 /**
  * Bottom bar of the Studio: lets the user pick an export aspect ratio for
@@ -74,7 +79,7 @@ const ALL_MONTHS_NODE_SIZE = { width: 1080, height: 1350 };
  * The ratio toggle is disabled for `monthly`/`year`, which always use their
  * own fixed canvas size (portrait poster / A3 landscape respectively).
  */
-export function ExportBar() {
+export function ExportBar({ variant = "bar" }: { variant?: "bar" | "sheet" } = {}) {
   const { state, updateState, setExporting } = useStudio();
   const [downloading, setDownloading] = useState(false);
   const [pdfDownloading, setPdfDownloading] = useState(false);
@@ -86,15 +91,21 @@ export function ExportBar() {
   const [pdfSizeOverride, setPdfSizeOverride] = useState<
     Partial<Record<StudioState["format"], "a4" | "a3">>
   >({});
-  const [pdfOrientationOverride, setPdfOrientationOverride] = useState<
-    Partial<Record<StudioState["format"], "portrait" | "landscape">>
-  >({});
 
-  const ratioEnabled = state.format === "daily";
   const busy = downloading || pdfDownloading || zipDownloading;
   const pdfSize = pdfSizeOverride[state.format] ?? PDF_DEFAULTS[state.format].size;
-  const pdfOrientation =
-    pdfOrientationOverride[state.format] ?? PDF_DEFAULTS[state.format].orientation;
+  // Orientation is a live preview control for `monthly` only; `daily` is
+  // governed by its aspect ratio (always portrait output) and `year` is always
+  // landscape. Preview, PNG and PDF all read this single derived value so what
+  // you see is exactly what exports.
+  const orientation: "portrait" | "landscape" =
+    state.format === "year"
+      ? "landscape"
+      : state.format === "monthly"
+        ? state.orientation ?? "portrait"
+        : "portrait";
+  const showRatio = state.format === "daily";
+  const showOrientation = state.format === "monthly";
   const showAllMonthsButton = state.format === "monthly" || state.format === "year";
 
   async function handleDownload() {
@@ -131,7 +142,7 @@ export function ExportBar() {
       if (!node) throw new Error("Nothing to export yet — the preview hasn't rendered.");
 
       const filename = `awqat-${state.format}-${slugify(state.city)}.pdf`;
-      await exportPdf(node, { size: pdfSize, orientation: pdfOrientation, filename });
+      await exportPdf(node, { size: pdfSize, orientation, filename });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -179,12 +190,18 @@ export function ExportBar() {
     // html-to-image's capture, so it's pushed off-screen with
     // `position:fixed` instead — attached to the DOM (so layout/fonts
     // resolve normally) but never visible to the user.
+    // Batch renders mirror the monthly poster's orientation; the year format's
+    // batch stays portrait (its own preview is a separate landscape canvas).
+    const nodeSize =
+      state.format === "monthly" && orientation === "landscape"
+        ? ALL_MONTHS_NODE_SIZE.landscape
+        : ALL_MONTHS_NODE_SIZE.portrait;
     const container = document.createElement("div");
     container.style.position = "fixed";
     container.style.top = "0";
     container.style.left = "-10000px";
-    container.style.width = `${ALL_MONTHS_NODE_SIZE.width}px`;
-    container.style.height = `${ALL_MONTHS_NODE_SIZE.height}px`;
+    container.style.width = `${nodeSize.width}px`;
+    container.style.height = `${nodeSize.height}px`;
     document.body.appendChild(container);
     const root = createRoot(container);
 
@@ -230,95 +247,115 @@ export function ExportBar() {
     }
   }
 
-  return (
-    <footer className="flex h-14 shrink-0 flex-wrap items-center justify-between gap-4 border-t border-border px-4">
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-1.5">
-          <span className="mr-1 text-xs text-muted-foreground">Aspect ratio</span>
-          {RATIOS.map((r) => (
-            <Button
-              key={r.value}
-              type="button"
-              size="sm"
-              variant={ratioEnabled && (state.exportRatio ?? "story") === r.value ? "default" : "outline"}
-              disabled={!ratioEnabled}
-              aria-pressed={ratioEnabled && (state.exportRatio ?? "story") === r.value}
-              onClick={() => updateState({ exportRatio: r.value })}
-            >
-              {r.label}
-            </Button>
-          ))}
-        </div>
+  const sheet = variant === "sheet";
 
-        <div className="flex items-center gap-1.5">
-          <span className="mr-1 text-xs text-muted-foreground">PDF size</span>
-          {PDF_SIZES.map((s) => (
-            <Button
-              key={s.value}
-              type="button"
-              size="sm"
-              variant={pdfSize === s.value ? "default" : "outline"}
-              aria-pressed={pdfSize === s.value}
-              onClick={() => setPdfSizeOverride((prev) => ({ ...prev, [state.format]: s.value }))}
-            >
-              {s.label}
-            </Button>
-          ))}
+  // One definition of each control, laid out two ways: inline on the desktop
+  // export bar, and as full-width labelled rows inside the mobile export
+  // sheet (where there's no bar to sit in).
+  const controls = (
+    <>
+      {showRatio && (
+        <div className={cn("flex items-center gap-2", sheet && "justify-between")}>
+          <span className="text-xs text-muted-foreground">Aspect ratio</span>
+          <Segmented
+            aria-label="Aspect ratio"
+            options={RATIOS}
+            value={state.exportRatio ?? "story"}
+            onChange={(value) => updateState({ exportRatio: value })}
+          />
         </div>
+      )}
 
-        <div className="flex items-center gap-1.5">
-          <span className="mr-1 text-xs text-muted-foreground">Orientation</span>
-          {PDF_ORIENTATIONS.map((o) => (
-            <Button
-              key={o.value}
-              type="button"
-              size="sm"
-              variant={pdfOrientation === o.value ? "default" : "outline"}
-              aria-pressed={pdfOrientation === o.value}
-              onClick={() =>
-                setPdfOrientationOverride((prev) => ({ ...prev, [state.format]: o.value }))
-              }
-            >
-              {o.label}
-            </Button>
-          ))}
+      {showOrientation && (
+        <div className={cn("flex items-center gap-2", sheet && "justify-between")}>
+          <span className="text-xs text-muted-foreground">Orientation</span>
+          <Segmented
+            aria-label="Orientation"
+            options={PDF_ORIENTATIONS}
+            value={orientation}
+            onChange={(value) => updateState({ orientation: value })}
+          />
+        </div>
+      )}
+
+      <div className={cn("flex items-center gap-2", sheet && "justify-between")}>
+        <span className="text-xs text-muted-foreground">PDF size</span>
+        <Segmented
+          aria-label="PDF size"
+          options={PDF_SIZES}
+          value={pdfSize}
+          onChange={(value) => setPdfSizeOverride((prev) => ({ ...prev, [state.format]: value }))}
+        />
+      </div>
+    </>
+  );
+
+  const errorNode = error ? (
+    <p role="alert" className="w-full text-xs text-destructive sm:w-auto">
+      {error}
+    </p>
+  ) : null;
+
+  const allMonthsButton = showAllMonthsButton ? (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={handleDownloadAllMonths}
+      disabled={busy}
+      className={cn(sheet && "w-full", zipDownloading && "opacity-80")}
+    >
+      {zipDownloading ? "Zipping…" : "Download all 12 months"}
+    </Button>
+  ) : null;
+
+  const pdfButton = (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={handleDownloadPdf}
+      disabled={busy}
+      className={cn(sheet && "flex-1", pdfDownloading && "opacity-80")}
+    >
+      {pdfDownloading ? "Exporting…" : "Download PDF"}
+    </Button>
+  );
+
+  const pngButton = (
+    <Button
+      type="button"
+      onClick={handleDownload}
+      disabled={busy}
+      className={cn("awqat-shimmer", sheet && "flex-1", downloading && "opacity-80")}
+    >
+      {downloading ? "Exporting…" : "Download PNG"}
+    </Button>
+  );
+
+  if (sheet) {
+    return (
+      <div className="flex flex-col gap-4 pb-1">
+        <div className="flex flex-col gap-3">{controls}</div>
+        {errorNode}
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            {pdfButton}
+            {pngButton}
+          </div>
+          {allMonthsButton}
         </div>
       </div>
+    );
+  }
 
-      <div className="flex items-center gap-3">
-        {error && (
-          <p role="alert" className="text-xs text-destructive">
-            {error}
-          </p>
-        )}
-        {showAllMonthsButton && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleDownloadAllMonths}
-            disabled={busy}
-            className={cn(zipDownloading && "opacity-80")}
-          >
-            {zipDownloading ? "Zipping…" : "Download all 12 months"}
-          </Button>
-        )}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleDownloadPdf}
-          disabled={busy}
-          className={cn(pdfDownloading && "opacity-80")}
-        >
-          {pdfDownloading ? "Exporting…" : "Download PDF"}
-        </Button>
-        <Button
-          type="button"
-          onClick={handleDownload}
-          disabled={busy}
-          className={cn(downloading && "opacity-80")}
-        >
-          {downloading ? "Exporting…" : "Download PNG"}
-        </Button>
+  return (
+    <footer className="flex shrink-0 flex-col gap-3 border-t border-border px-4 py-2.5 sm:min-h-14 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:py-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{controls}</div>
+
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        {errorNode}
+        {allMonthsButton}
+        {pdfButton}
+        {pngButton}
       </div>
     </footer>
   );

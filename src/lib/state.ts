@@ -39,6 +39,13 @@ export type StudioState = {
    * `year` (A3 landscape), which always use their own fixed canvas size.
    */
   exportRatio?: "story" | "square" | "post";
+  /**
+   * Page orientation for the `monthly` format — drives both the live preview
+   * canvas shape and the exported PDF/PNG. `daily` derives orientation from
+   * `exportRatio` and `year` is always landscape, so this only applies to
+   * `monthly`. Unset falls back to `portrait`.
+   */
+  orientation?: "portrait" | "landscape";
 };
 
 export const DEFAULT_STATE: StudioState = {
@@ -97,12 +104,14 @@ const SCALAR_KEYS = [
   "radius",
   "showQibla",
   "exportRatio",
+  "orientation",
 ] as const;
 
 const NUMBER_KEYS = new Set(["lat", "lon", "year", "month", "day", "bgDim", "bgBlur", "radius"]);
 const BOOLEAN_KEYS = new Set(["hour12", "showQibla"]);
 const FORMAT_VALUES = new Set(["daily", "monthly", "year"]);
 const LANG_VALUES = new Set(["en", "bn", "ar"]);
+const ORIENTATION_VALUES = new Set(["portrait", "landscape"]);
 
 export function encodeState(s: StudioState): string {
   const params = new URLSearchParams();
@@ -132,6 +141,9 @@ export function decodeState(query: string): Partial<StudioState> {
       result[key] = raw;
     } else if (key === "lang" || key === "numerals") {
       if (!LANG_VALUES.has(raw)) continue;
+      result[key] = raw;
+    } else if (key === "orientation") {
+      if (!ORIENTATION_VALUES.has(raw)) continue;
       result[key] = raw;
     } else {
       result[key] = raw;
