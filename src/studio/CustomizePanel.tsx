@@ -11,12 +11,14 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { THEMES } from "@/templates/themes";
 import { MOTIFS } from "@/graphics";
 import { GRADIENTS } from "@/graphics/backgrounds";
 import { PRAYER_ROW_KEYS, ROW_LABEL_KEYS } from "@/templates/shared";
 import { label, type Lang } from "@/lib/i18n";
 import { useStudio } from "./context";
+import { CalculationFields } from "./CalculationFields";
 import { PersonalizeFields } from "./PersonalizeFields";
 
 const NONE = "none";
@@ -51,13 +53,32 @@ const NUMERAL_OPTIONS: { value: Lang; name: string }[] = [
   { value: "ar", name: "Arabic (٠-٩)" },
 ];
 
+// value → label maps so each Select's trigger shows the friendly name (e.g.
+// "Gold on Navy") instead of the raw id ("gold-navy"). Base UI's Select.Value
+// reads these off the Root's `items` prop.
+const THEME_ITEMS: Record<string, string> = Object.fromEntries(THEMES.map((t) => [t.id, t.name]));
+const GRADIENT_ITEMS: Record<string, string> = {
+  none: "None",
+  ...Object.fromEntries(GRADIENTS.map((g) => [g.id, g.name])),
+};
+const MOTIF_ITEMS: Record<string, string> = {
+  none: "None",
+  ...Object.fromEntries(MOTIFS.map((m) => [m.id, m.name])),
+};
+const LANGUAGE_ITEMS: Record<string, string> = Object.fromEntries(
+  LANGUAGE_OPTIONS.map((o) => [o.value, o.name]),
+);
+const NUMERAL_ITEMS: Record<string, string> = Object.fromEntries(
+  NUMERAL_OPTIONS.map((o) => [o.value, o.name]),
+);
+
 /**
  * The right-hand controls panel: binds every visual/localization field of
  * `StudioState` to a live-updating control. Each control calls
  * `updateState` directly, so the preview (driven by the same state) updates
  * instantly — there's no separate "apply" step.
  */
-export function CustomizePanel() {
+export function CustomizePanel({ hideHeading = false }: { hideHeading?: boolean } = {}) {
   const { state, updateState } = useStudio();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -84,15 +105,21 @@ export function CustomizePanel() {
 
   return (
     <div className="flex flex-col gap-6 text-sm">
-      <div>
-        <h2 className="text-sm font-semibold text-foreground">Customize</h2>
-        <p className="text-xs text-muted-foreground">Every change previews instantly.</p>
-      </div>
+      {!hideHeading && (
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">Customize</h2>
+          <p className="text-xs text-muted-foreground">Every change previews instantly.</p>
+        </div>
+      )}
 
       {/* Theme */}
       <section className="flex flex-col gap-1.5">
         <Label htmlFor="theme-select">Theme</Label>
-        <Select value={state.theme} onValueChange={(v) => updateState({ theme: String(v) })}>
+        <Select
+          items={THEME_ITEMS}
+          value={state.theme}
+          onValueChange={(v) => updateState({ theme: String(v) })}
+        >
           <SelectTrigger id="theme-select" className="w-full">
             <SelectValue placeholder="Select a theme" />
           </SelectTrigger>
@@ -124,31 +151,23 @@ export function CustomizePanel() {
               {isCustomAccent ? accentValue : "Theme default"}
             </span>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-56">
+          <PopoverContent align="start" className="w-64">
             <div className="flex flex-col gap-3">
-              <div className="grid grid-cols-5 gap-2">
-                {ACCENT_PRESETS.map((hex) => (
-                  <button
-                    key={hex}
-                    type="button"
-                    aria-label={`Accent ${hex}`}
-                    className="size-7 rounded-full border border-border outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover"
-                    style={{ backgroundColor: hex }}
-                    onClick={() => updateState({ accent: hex })}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="accent-custom" className="text-xs font-normal text-muted-foreground">
-                  Custom
-                </Label>
-                <input
-                  id="accent-custom"
-                  type="color"
-                  value={accentValue}
-                  onChange={(e) => updateState({ accent: e.target.value })}
-                  className="h-8 w-12 cursor-pointer rounded-md border border-input bg-transparent p-0.5"
-                />
+              <ColorPicker value={accentValue} onChange={(hex) => updateState({ accent: hex })} />
+              <div>
+                <p className="mb-1.5 text-xs font-normal text-muted-foreground">Presets</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {ACCENT_PRESETS.map((hex) => (
+                    <button
+                      key={hex}
+                      type="button"
+                      aria-label={`Accent ${hex}`}
+                      className="size-7 rounded-full border border-border outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover"
+                      style={{ backgroundColor: hex }}
+                      onClick={() => updateState({ accent: hex })}
+                    />
+                  ))}
+                </div>
               </div>
               <Button
                 type="button"
@@ -173,6 +192,7 @@ export function CustomizePanel() {
             Gradient
           </Label>
           <Select
+            items={GRADIENT_ITEMS}
             value={state.gradient ?? NONE}
             onValueChange={(v) =>
               updateState({ gradient: v === NONE ? undefined : String(v) })
@@ -262,6 +282,7 @@ export function CustomizePanel() {
       <section className="flex flex-col gap-1.5">
         <Label htmlFor="motif-select">Motif</Label>
         <Select
+          items={MOTIF_ITEMS}
           value={state.motif ?? NONE}
           onValueChange={(v) => updateState({ motif: v === NONE ? undefined : String(v) })}
         >
@@ -300,7 +321,11 @@ export function CustomizePanel() {
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="lang-select">Language</Label>
-          <Select value={state.lang} onValueChange={(v) => updateState({ lang: v as Lang })}>
+          <Select
+            items={LANGUAGE_ITEMS}
+            value={state.lang}
+            onValueChange={(v) => updateState({ lang: v as Lang })}
+          >
             <SelectTrigger id="lang-select" className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -317,6 +342,7 @@ export function CustomizePanel() {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="numerals-select">Numerals</Label>
           <Select
+            items={NUMERAL_ITEMS}
             value={state.numerals}
             onValueChange={(v) => updateState({ numerals: v as Lang })}
           >
@@ -343,6 +369,10 @@ export function CustomizePanel() {
           onCheckedChange={(checked) => updateState({ hour12: checked })}
         />
       </section>
+
+      {/* How the times are computed — sits with the other timetable controls
+          rather than behind the location field. */}
+      <CalculationFields />
 
       {/* Row visibility */}
       <section className="flex flex-col gap-2">

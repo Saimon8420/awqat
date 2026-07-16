@@ -121,8 +121,9 @@ describe("Studio", () => {
     fireEvent.click(screen.getByText("Bangladesh").closest("button")!);
     await waitFor(() => expect(main).toHaveTextContent(/"method":\s*"Karachi"/));
 
-    // Manually override the method via the Advanced select.
-    fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
+    // Manually override the method via the customize panel's calculation
+    // select (it used to live behind an "Advanced" popover on the location
+    // field; it's now a plain always-visible control).
     await waitFor(() => expect(screen.getByLabelText("Calculation method")).toBeInTheDocument());
     fireEvent.click(screen.getByLabelText("Calculation method"));
     await waitFor(() => expect(screen.getByText("Egyptian")).toBeInTheDocument());
@@ -134,8 +135,6 @@ describe("Studio", () => {
     fireEvent.pointerDown(egyptianOption, { pointerType: "mouse" });
     fireEvent.click(egyptianOption);
     await waitFor(() => expect(main).toHaveTextContent(/"method":\s*"Egyptian"/));
-    // Close the Advanced popover so it doesn't shadow the rest of the page.
-    fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
 
     // Selecting a different city no longer resets the method: it stays the
     // overridden value even though defaultMethod("Egypt") would say
@@ -250,6 +249,13 @@ describe("Studio", () => {
 
     render(<Studio />);
     await waitFor(() => expect(getMonthly).toHaveBeenCalled());
+
+    // The Month select only shows for the monthly/year formats; the daily
+    // format uses a calendar date picker instead. Switch to Monthly first,
+    // let its own format-change refetch settle, then clear the mock so the
+    // assertion below sees only the month-change refetch.
+    fireEvent.click(screen.getByRole("tab", { name: "Monthly" }));
+    await waitFor(() => expect(screen.getByLabelText("Month")).toBeInTheDocument());
     vi.mocked(getMonthly).mockClear();
 
     const monthTrigger = screen.getByLabelText("Month");

@@ -1,3 +1,4 @@
+import { CalendarIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -5,6 +6,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { useStudio } from "./context";
 
@@ -25,25 +29,64 @@ const MONTH_NAMES = [
 
 const CURRENT_YEAR = new Date().getFullYear();
 // A generous but bounded window around "now" — Miqaat's underlying API
-// supports arbitrary years, but an unbounded Select isn't practical, and
+// supports arbitrary years, but an unbounded picker isn't practical, and
 // this range comfortably covers past-record and near-future planning use.
 const YEAR_OPTIONS = Array.from({ length: 12 }, (_, i) => CURRENT_YEAR - 4 + i);
+// value → label maps so the Select triggers read as "March" / "2026" rather
+// than the raw stored value (see Base UI Select's `items` prop).
+const MONTH_ITEMS: Record<string, string> = Object.fromEntries(
+  MONTH_NAMES.map((name, i) => [String(i + 1), name]),
+);
+const YEAR_ITEMS: Record<string, string> = Object.fromEntries(
+  YEAR_OPTIONS.map((y) => [String(y), String(y)]),
+);
+const START_MONTH = new Date(CURRENT_YEAR - 4, 0);
+const END_MONTH = new Date(CURRENT_YEAR + 7, 11);
+
+const TRIGGER_FORMAT = new Intl.DateTimeFormat(undefined, {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
 
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
 
 /**
- * Left-sidebar controls for which month (and, for the daily format, which
- * day) of `state.year` the preview shows — sits directly under FormatTabs
- * since format and date selection are closely related. Changing any of
- * these updates `StudioState`, which Studio's fetch effect is keyed on, so
- * the preview refetches/re-renders automatically.
+ * Left-sidebar date controls. For the `daily` format — where the exact day
+ * matters — it's a calendar date picker in a popover. For `monthly`/`year`,
+ * where only the month/year is meaningful, it's a pair of compact selects.
+ * Either way, changes flow through `updateState`, which Studio's fetch effect
+ * is keyed on, so the preview refetches/re-renders automatically.
  */
-export function DateControls() {
+export function DateControls({ inline = false }: { inline?: boolean } = {}) {
   const { state, updateState } = useStudio();
-  const lastDay = daysInMonth(state.year, state.month);
-  const dayOptions = Array.from({ length: lastDay }, (_, i) => i + 1);
+
+  const selectedDate = new Date(state.year, state.month - 1, state.day);
+
+  const calendar = (
+    <Calendar
+      mode="single"
+      selected={selectedDate}
+      onSelect={pickDate}
+      defaultMonth={selectedDate}
+      captionLayout="dropdown"
+      startMonth={START_MONTH}
+      endMonth={END_MONTH}
+      required
+    />
+  );
+
+  function pickDate(date: Date | undefined) {
+    if (!date) return;
+    updateState({
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      day: date.getDate(),
+    });
+  }
 
   function changeYear(value: string) {
     const year = Number(value);
@@ -57,68 +100,81 @@ export function DateControls() {
     updateState({ month, day: clampedDay });
   }
 
-  function changeDay(value: string) {
-    updateState({ day: Number(value) });
-  }
-
   return (
     <div className="flex flex-col gap-2">
-      <Label>Date</Label>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="year-select" className="text-xs font-normal text-muted-foreground">
-            Year
-          </Label>
-          <Select value={String(state.year)} onValueChange={(v) => changeYear(String(v))}>
-            <SelectTrigger id="year-select" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {YEAR_OPTIONS.map((y) => (
-                <SelectItem key={y} value={String(y)}>
-                  {y}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Inline (the mobile sheet) already has "Date" in its header. */}
+      {!inline && <Label>Date</Label>}
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="month-select" className="text-xs font-normal text-muted-foreground">
-            Month
-          </Label>
-          <Select value={String(state.month)} onValueChange={(v) => changeMonth(String(v))}>
-            <SelectTrigger id="month-select" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MONTH_NAMES.map((name, i) => (
-                <SelectItem key={name} value={String(i + 1)}>
-                  {name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      {state.format === "daily" ? (
+        // In a bottom sheet the sheet itself is the surface, so the calendar
+        // sits directly in it; on desktop it stays tucked into a popover so
+        // the sidebar doesn't lose a month grid's worth of height.
+        inline ? (
+          <div className="flex justify-center pb-2">{calendar}</div>
+        ) : (
+          <Popover>
+            <PopoverTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start gap-2 font-normal"
+                />
+              }
+            >
+              <CalendarIcon className="size-4 text-muted-foreground" />
+              <span>{TRIGGER_FORMAT.format(selectedDate)}</span>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-auto p-2">
+              {calendar}
+            </PopoverContent>
+          </Popover>
+        )
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="year-select" className="text-xs font-normal text-muted-foreground">
+              Year
+            </Label>
+            <Select
+              items={YEAR_ITEMS}
+              value={String(state.year)}
+              onValueChange={(v) => changeYear(String(v))}
+            >
+              <SelectTrigger id="year-select" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEAR_OPTIONS.map((y) => (
+                  <SelectItem key={y} value={String(y)}>
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      {state.format === "daily" && (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="day-select" className="text-xs font-normal text-muted-foreground">
-            Day
-          </Label>
-          <Select value={String(state.day)} onValueChange={(v) => changeDay(String(v))}>
-            <SelectTrigger id="day-select" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {dayOptions.map((d) => (
-                <SelectItem key={d} value={String(d)}>
-                  {d}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="month-select" className="text-xs font-normal text-muted-foreground">
+              Month
+            </Label>
+            <Select
+              items={MONTH_ITEMS}
+              value={String(state.month)}
+              onValueChange={(v) => changeMonth(String(v))}
+            >
+              <SelectTrigger id="month-select" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTH_NAMES.map((name, i) => (
+                  <SelectItem key={name} value={String(i + 1)}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       )}
     </div>

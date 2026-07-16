@@ -9,6 +9,61 @@ const LANES: { value: TemplateDef["lane"]; label: string }[] = [
 ];
 
 /**
+ * A small designed mini-mock standing in for each template — a gold-on-navy
+ * card whose interior schematic (chips + rows / a table / a month grid) hints
+ * at the template's format, so the gallery reads as a set of layouts rather
+ * than a grid of gray boxes with a letter.
+ */
+function TemplateThumb({ format }: { format: TemplateDef["format"] }) {
+  return (
+    <span className="relative flex aspect-[4/5] w-full flex-col gap-1 overflow-hidden rounded-md bg-gradient-to-br from-[#16295c] to-[#0a1330] p-2">
+      {/* Mihrab-arch watermark */}
+      <svg
+        viewBox="0 0 40 50"
+        className="pointer-events-none absolute inset-x-0 top-1 mx-auto h-[85%] w-[70%] opacity-25"
+        fill="none"
+        stroke="#e6c976"
+        strokeWidth="1"
+        aria-hidden="true"
+      >
+        <path d="M6 50 V20 C6 12 12 8 20 4 C28 8 34 12 34 20 V50" />
+      </svg>
+
+      {format === "daily" && (
+        <span className="relative flex h-full flex-col justify-between">
+          <span className="h-1 w-2/3 rounded-full bg-[#e6c976]/80" />
+          <span className="flex gap-1">
+            <span className="h-4 flex-1 rounded-sm bg-white/15" />
+            <span className="h-4 flex-1 rounded-sm bg-white/15" />
+          </span>
+          <span className="flex flex-col gap-0.5">
+            <span className="h-0.5 w-full rounded-full bg-white/25" />
+            <span className="h-0.5 w-4/5 rounded-full bg-white/25" />
+          </span>
+        </span>
+      )}
+
+      {format === "monthly" && (
+        <span className="relative flex h-full flex-col gap-[3px] pt-2">
+          <span className="mb-0.5 h-1 w-1/2 rounded-full bg-[#e6c976]/80" />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <span key={i} className="h-0.5 w-full rounded-full bg-white/25" />
+          ))}
+        </span>
+      )}
+
+      {format === "year" && (
+        <span className="relative grid h-full grid-cols-3 grid-rows-4 gap-[3px] pt-1.5">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span key={i} className="rounded-[2px] bg-white/15" />
+          ))}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/**
  * The sidebar's template gallery: templates for the active `state.format`,
  * grouped into Personal / Organization tabs. Clicking a template selects
  * it via `updateState({ template })`.
@@ -70,9 +125,7 @@ export function TemplateGallery() {
                       : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
                   )}
                 >
-                  <span className="flex aspect-[9/16] w-full items-center justify-center rounded-md bg-muted text-[10px] font-medium uppercase tracking-wide">
-                    {t.name.slice(0, 1)}
-                  </span>
+                  <TemplateThumb format={t.format} />
                   <span className="line-clamp-1 w-full text-center">{t.name}</span>
                 </button>
               ))}

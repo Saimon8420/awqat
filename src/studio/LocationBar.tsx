@@ -3,31 +3,20 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import {
   currentLocation,
   defaultMethod,
   searchCity,
   type CitySearchResult,
 } from "@/lib/geo";
-import { getMethods } from "@/lib/miqaat";
 import { useStudio } from "./context";
 
 const DEBOUNCE_MS = 300;
 
-export function LocationBar() {
-  const { state, updateState, methodOverridden, setMethodOverridden } = useStudio();
+export function LocationBar({ hideLabel = false }: { hideLabel?: boolean } = {}) {
+  // `methodOverridden` is set by the calculation-method control (see
+  // CalculationFields) and read here: an explicit method choice must survive a
+  // city change instead of being re-derived from the new country.
+  const { state, updateState, methodOverridden } = useStudio();
 
   const [query, setQuery] = useState(state.city);
   const [results, setResults] = useState<CitySearchResult[]>([]);
@@ -37,10 +26,6 @@ export function LocationBar() {
 
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState<string | null>(null);
-
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [methods, setMethods] = useState<{ id: string; name: string }[]>([]);
-  const [methodsError, setMethodsError] = useState<string | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Whether the user has actually interacted with the field this session
@@ -52,14 +37,6 @@ export function LocationBar() {
   // effect's async `.then` callback always reads the latest value without
   // needing to be a dependency.
   const interactedRef = useRef(false);
-
-  useEffect(() => {
-    getMethods()
-      .then(setMethods)
-      .catch((err: unknown) => {
-        setMethodsError(err instanceof Error ? err.message : String(err));
-      });
-  }, []);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -115,18 +92,15 @@ export function LocationBar() {
       .finally(() => setLocating(false));
   }
 
-  function changeMethod(method: string) {
-    setMethodOverridden(true);
-    updateState({ method });
-  }
-
-  function changeMadhab(madhab: string) {
-    updateState({ madhab });
-  }
-
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor="location-search">Location</Label>
+      {/* When the surrounding sheet header already reads "Location", the
+          visible copy would just repeat it — but the input still needs its
+          label for assistive tech, so it goes visually hidden rather than
+          away. */}
+      <Label htmlFor="location-search" className={hideLabel ? "sr-only" : undefined}>
+        Location
+      </Label>
 
       <div className="relative">
         <Input
@@ -194,48 +168,6 @@ export function LocationBar() {
         >
           {locating ? "Locating…" : "Use my location"}
         </Button>
-
-        <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
-          <PopoverTrigger render={<Button type="button" variant="ghost" size="sm" />}>
-            Advanced
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-64">
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="method-select">Calculation method</Label>
-                <Select
-                  value={state.method}
-                  onValueChange={(value) => changeMethod(String(value))}
-                >
-                  <SelectTrigger id="method-select" className="w-full">
-                    <SelectValue placeholder="Select a method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {methods.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {methodsError && (
-                  <p className="text-xs text-destructive" role="alert">
-                    {methodsError}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between gap-2">
-                <Label htmlFor="madhab-switch">Hanafi Asr timing</Label>
-                <Switch
-                  id="madhab-switch"
-                  checked={state.madhab === "hanafi"}
-                  onCheckedChange={(checked) => changeMadhab(checked ? "hanafi" : "shafi")}
-                />
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
       </div>
 
       {locateError && (
