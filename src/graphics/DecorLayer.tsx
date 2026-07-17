@@ -83,21 +83,23 @@ function tileStyle(kind: "girih" | "zellij", color: string, opacity: number): CS
 export function DecorLayer({ state, theme, accent }: DecorLayerProps) {
   const gradient = state.gradient ? GRADIENTS.find((g) => g.id === state.gradient) : undefined;
   const motif = state.motif ? MOTIFS.find((m) => m.id === state.motif) : undefined;
-  const hasPhoto = Boolean(state.bgImage) && !gradient;
+  const hasPhoto = Boolean(state.bgImage);
+  // Photo wins over a gradient — that's what a user expects right after
+  // uploading one. (The Background picker also keeps the two mutually
+  // exclusive in state, so in practice only one is ever set.)
+  const showGradient = Boolean(gradient) && !hasPhoto;
   // The user's custom accent wins when set; otherwise fall back to the
   // current theme's accent — same precedence templates use for everything
   // else they tint with the effective accent.
   const effectiveAccent = accent || state.accent || theme.accent;
-  const hasBackdrop = Boolean(gradient) || hasPhoto;
+  const hasBackdrop = showGradient || hasPhoto;
 
-  if (!gradient && !hasPhoto && !motif) return null;
+  if (!showGradient && !hasPhoto && !motif) return null;
 
   return (
     <div className="pointer-events-none" style={LAYER_STYLE} aria-hidden="true">
       {/* 1. Base field */}
-      {gradient ? (
-        <div className="absolute inset-0" style={{ backgroundImage: gradient.css }} />
-      ) : hasPhoto ? (
+      {hasPhoto ? (
         <>
           <div
             className="absolute inset-0 bg-cover bg-center"
@@ -112,12 +114,14 @@ export function DecorLayer({ state, theme, accent }: DecorLayerProps) {
             style={{ backgroundColor: theme.bg, opacity: (state.bgDim ?? 55) / 100 }}
           />
         </>
+      ) : showGradient ? (
+        <div className="absolute inset-0" style={{ backgroundImage: gradient!.css }} />
       ) : null}
 
       {/* 2. Depth over a designed backdrop: a whisper of carved-tile texture
           and a soft accent glow, so the field reads as a lit panel rather
-          than a flat wash. */}
-      {gradient ? (
+          than a flat wash. (Gradient only — a photo already has its scrim.) */}
+      {showGradient ? (
         <>
           <div className="absolute inset-0" style={tileStyle("girih", effectiveAccent, 0.1)} />
           <div

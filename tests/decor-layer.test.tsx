@@ -3,6 +3,7 @@ import { render } from "@testing-library/react";
 import { DecorLayer } from "../src/graphics/DecorLayer";
 import { DEFAULT_STATE } from "../src/lib/state";
 import { THEMES } from "../src/templates/themes";
+import { GRADIENTS } from "../src/graphics/backgrounds";
 
 const theme = THEMES[0]; // emerald, bg "#f4faf7"
 
@@ -41,5 +42,22 @@ describe("DecorLayer", () => {
     );
     const photoLayer = container.querySelector(".bg-cover") as HTMLElement;
     expect(photoLayer.style.backgroundImage).toBe('url("data:image/png;base64,AAAA")');
+  });
+
+  it("renders the photo (not the gradient) when both bgImage and gradient are set", () => {
+    const { container } = render(
+      <DecorLayer
+        state={{ ...DEFAULT_STATE, bgImage: "data:image/png;base64,AAAA", gradient: GRADIENTS[0].id }}
+        theme={theme}
+      />,
+    );
+    // Photo layer present…
+    expect(container.querySelector(".bg-cover")).not.toBeNull();
+    // …and no gradient base layer (its inline backgroundImage is a CSS gradient).
+    const layers = Array.from(
+      container.querySelectorAll<HTMLElement>("div[style*='background-image']"),
+    );
+    const gradientLayer = layers.find((el) => el.style.backgroundImage.includes("gradient"));
+    expect(gradientLayer).toBeUndefined();
   });
 });
