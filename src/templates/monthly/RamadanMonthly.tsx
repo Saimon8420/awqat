@@ -27,7 +27,7 @@ const HIGHLIGHT_TYPES = Object.keys(HIGHLIGHT_TAG) as SpecialType[];
  * and Eid al-Fitr are highlighted using the theme's accent color.
  */
 export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateProps) {
-  const { lang, hour12, numerals, showRows } = state;
+  const { lang, hour12, numerals, showRows, personal } = state;
   const rows = PRAYER_ROW_KEYS.filter((key) => showRows[key] !== false);
   const fmt = (iso: string) =>
     formatTime(iso, { hour12, lang: numerals, timezone: monthly.location.timezone });
@@ -49,6 +49,86 @@ export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateP
     ...(typeof state.radius === "number" ? { borderRadius: state.radius } : null),
   };
 
+  // Landscape is wide but short, so split the month into two side-by-side
+  // tables (~16 rows each) rather than one clipped 31-row column; portrait
+  // keeps a single column. See PersonalMonthly for the shared approach.
+  const landscape = state.orientation === "landscape";
+  const half = Math.ceil(monthly.days.length / 2);
+  const chunks = landscape
+    ? [monthly.days.slice(0, half), monthly.days.slice(half)]
+    : [monthly.days];
+  // p-1 keeps all ~31 rows inside the fixed frame in both orientations with
+  // headroom for an optional greeting/dua (rows stretch to fill when absent).
+  const pad = "p-1";
+  const dayHead = landscape ? "text-sm" : "text-lg";
+  const heroHead = landscape ? "text-base" : "text-xl";
+  const heroCell = landscape ? "text-base" : "text-lg";
+  const dayCell = landscape ? "text-sm" : "text-base";
+
+  const renderTable = (days: typeof monthly.days, offset: number) => (
+    <table className="w-full flex-1 border-collapse text-left" style={{ tableLayout: "fixed" }}>
+      <thead>
+        <tr style={{ borderBottom: `2px solid ${accent}` }}>
+          <th className={cn(pad, dayHead, "font-semibold")}>{label("day", lang)}</th>
+          <th className={cn(pad, heroHead, "text-center font-bold")} style={{ color: accent }}>
+            {label("sehri", lang)}
+          </th>
+          <th className={cn(pad, heroHead, "text-center font-bold")} style={{ color: accent }}>
+            {label("iftar", lang)}
+          </th>
+          {rows.map((key) => (
+            <th key={key} className={cn(pad, "text-center text-sm font-medium opacity-70")}>
+              {label(ROW_LABEL_KEYS[key], lang)}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {days.map((day, j) => {
+          const i = offset + j;
+          const { gregDay, hijriDay } = dayLabel(day);
+          const types = specialDays[day.dateISO] ?? [];
+          const highlightType = HIGHLIGHT_TYPES.find((t) => types.includes(t));
+          const isHighlighted = highlightType !== undefined;
+
+          const rowStyle: CSSProperties = isHighlighted
+            ? {
+                backgroundColor: `${accent}26`,
+                borderLeft: `4px solid ${accent}`,
+              }
+            : { backgroundColor: i % 2 === 1 ? theme.muted : "transparent" };
+
+          return (
+            <tr key={day.dateISO} style={rowStyle}>
+              <td className={cn(pad, dayCell, "align-top font-medium")}>
+                {toNumerals(String(gregDay), numerals)}
+                <span className="ml-1 text-sm opacity-60">
+                  /{toNumerals(String(hijriDay), numerals)}
+                </span>
+                {highlightType && (
+                  <div className="text-xs font-semibold" style={{ color: accent }}>
+                    {HIGHLIGHT_TAG[highlightType]}
+                  </div>
+                )}
+              </td>
+              <td className={cn(pad, heroCell, "text-center font-bold")} style={{ color: accent }}>
+                {fmt(day.fasting.sehri)}
+              </td>
+              <td className={cn(pad, heroCell, "text-center font-bold")} style={{ color: accent }}>
+                {fmt(day.fasting.iftar)}
+              </td>
+              {rows.map((key) => (
+                <td key={key} className={cn(pad, "text-center text-sm opacity-80")}>
+                  {fmt(day.prayers[key])}
+                </td>
+              ))}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+
   return (
     <div
       dir={dir(lang)}
@@ -56,11 +136,16 @@ export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateP
       style={rootStyle}
     >
       <DecorLayer state={state} theme={theme} accent={accent} />
-      <header className="mb-4 flex items-baseline justify-between">
-        <h1 className="text-4xl font-bold" style={{ color: accent }}>
-          {label("ramadan", lang)}
-          {hijriYear !== undefined ? ` ${toNumerals(String(hijriYear), numerals)}` : ""}
-        </h1>
+      <header className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-bold" style={{ color: accent }}>
+            {label("ramadan", lang)}
+            {hijriYear !== undefined ? ` ${toNumerals(String(hijriYear), numerals)}` : ""}
+          </h1>
+          {personal?.greeting && (
+            <p className="mt-1 text-xl font-medium opacity-90">{personal.greeting}</p>
+          )}
+        </div>
         <p className="text-xl opacity-70">{state.city}</p>
       </header>
 
@@ -69,66 +154,17 @@ export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateP
           No prayer times available for this month yet.
         </p>
       ) : (
-        <table className="w-full flex-1 border-collapse text-left" style={{ tableLayout: "fixed" }}>
-          <thead>
-            <tr style={{ borderBottom: `2px solid ${accent}` }}>
-              <th className="p-2 text-lg font-semibold">{label("day", lang)}</th>
-              <th className="p-2 text-center text-xl font-bold" style={{ color: accent }}>
-                {label("sehri", lang)}
-              </th>
-              <th className="p-2 text-center text-xl font-bold" style={{ color: accent }}>
-                {label("iftar", lang)}
-              </th>
-              {rows.map((key) => (
-                <th key={key} className="p-2 text-center text-sm font-medium opacity-70">
-                  {label(ROW_LABEL_KEYS[key], lang)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {monthly.days.map((day, i) => {
-              const { gregDay, hijriDay } = dayLabel(day);
-              const types = specialDays[day.dateISO] ?? [];
-              const highlightType = HIGHLIGHT_TYPES.find((t) => types.includes(t));
-              const isHighlighted = highlightType !== undefined;
+        <div className={cn("flex flex-1 gap-6", landscape ? "flex-row" : "flex-col")}>
+          {chunks.map((days, ci) => (
+            <div key={ci} className="flex min-w-0 flex-1 flex-col">
+              {renderTable(days, ci === 0 ? 0 : half)}
+            </div>
+          ))}
+        </div>
+      )}
 
-              const rowStyle: CSSProperties = isHighlighted
-                ? {
-                    backgroundColor: `${accent}26`,
-                    borderLeft: `4px solid ${accent}`,
-                  }
-                : { backgroundColor: i % 2 === 1 ? theme.muted : "transparent" };
-
-              return (
-                <tr key={day.dateISO} style={rowStyle}>
-                  <td className="p-2 align-top text-base font-medium">
-                    {toNumerals(String(gregDay), numerals)}
-                    <span className="ml-1 text-sm opacity-60">
-                      /{toNumerals(String(hijriDay), numerals)}
-                    </span>
-                    {highlightType && (
-                      <div className="text-xs font-semibold" style={{ color: accent }}>
-                        {HIGHLIGHT_TAG[highlightType]}
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-2 text-center text-lg font-bold" style={{ color: accent }}>
-                    {fmt(day.fasting.sehri)}
-                  </td>
-                  <td className="p-2 text-center text-lg font-bold" style={{ color: accent }}>
-                    {fmt(day.fasting.iftar)}
-                  </td>
-                  {rows.map((key) => (
-                    <td key={key} className="p-2 text-center text-sm opacity-80">
-                      {fmt(day.prayers[key])}
-                    </td>
-                  ))}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      {personal?.dua && (
+        <p className="mt-3 text-center text-base italic opacity-80">{personal.dua}</p>
       )}
 
       <MethodCaption method={monthly.method} madhab={monthly.madhab} lang={lang} className="mt-3" />

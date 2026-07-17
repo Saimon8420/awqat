@@ -2,7 +2,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUploadField } from "@/components/ui/image-upload";
 import { TEMPLATES } from "@/templates/registry";
+import type { StudioState } from "@/lib/state";
 import { useStudio } from "./context";
+
+/**
+ * Whether the active template renders the Qibla compass (only the daily
+ * cards). Used by CustomizePanel to hide the "Show Qibla" toggle on
+ * monthly/year, where it would be a dead control.
+ */
+export function templateShowsQibla(state: StudioState): boolean {
+  return TEMPLATES.find((t) => t.id === state.template)?.showsQibla === true;
+}
 
 // Reuses Input's own styling (see src/components/ui/input.tsx) so a
 // multi-line dua/verse field looks consistent even though shadcn's Textarea
