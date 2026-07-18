@@ -35,7 +35,7 @@ beforeEach(() => {
 describe("App", () => {
   it("renders the Awqat studio shell", () => {
     render(<App />);
-    expect(screen.getByText("Awqat Studio")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Awqat" })).toBeInTheDocument();
     expect(screen.getByLabelText("Location")).toBeInTheDocument();
   });
 });

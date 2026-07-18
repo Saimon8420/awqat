@@ -18,6 +18,10 @@ import {
 } from "@/lib/miqaat";
 import { isRamadanMonth, specialDaysForMonth, type SpecialType } from "@/lib/calendar";
 import { dir } from "@/lib/i18n";
+import { useIsMobile } from "@/lib/use-media-query";
+import { Brand } from "./Brand";
+import { MobileStudio } from "./MobileStudio";
+import { DisclaimerText, ToolkitLinks } from "./SiteNotes";
 import { LocationBar } from "./LocationBar";
 import { FormatTabs } from "./FormatTabs";
 import { DateControls } from "./DateControls";
@@ -69,6 +73,10 @@ const INITIAL_FETCH_STATE: FetchState = {
 };
 
 export function Studio() {
+  // Below `lg` the app switches to a purpose-built phone shell (see
+  // MobileStudio) rather than stacking the desktop columns; the two share all
+  // state and every controls component.
+  const isMobile = useIsMobile();
   const [state, setState] = useState<StudioState>(() => computeInitialState());
   const [methodOverridden, setMethodOverridden] = useState(false);
   const [fetchState, setFetchState] = useState<FetchState>(INITIAL_FETCH_STATE);
@@ -92,12 +100,24 @@ export function Studio() {
     setState((prev) => withValidTemplate({ ...prev, ...patch }));
   }, []);
 
-  // Persist to localStorage + reflect into the URL on every state change.
+  // Persist to localStorage + reflect into the URL — but debounced. Continuous
+  // inputs (dragging the color picker or a slider) fire state changes many
+  // times a second; writing state (which can include a large `bgImage` data
+  // URI) to localStorage + `history.replaceState` on every tick janks the drag.
+  // Coalescing to the last change after a short idle keeps interaction smooth
+  // while still persisting promptly once the user settles.
+  const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    saveLocal(state);
-    const qs = encodeState(state);
-    const next = qs ? `?${qs}` : window.location.pathname;
-    window.history.replaceState(null, "", next);
+    if (persistTimer.current) clearTimeout(persistTimer.current);
+    persistTimer.current = setTimeout(() => {
+      saveLocal(state);
+      const qs = encodeState(state);
+      const next = qs ? `?${qs}` : window.location.pathname;
+      window.history.replaceState(null, "", next);
+    }, 200);
+    return () => {
+      if (persistTimer.current) clearTimeout(persistTimer.current);
+    };
   }, [state]);
 
   // Defensive guard: `updateState` and `FormatTabs.changeFormat` already keep
@@ -234,17 +254,54 @@ export function Studio() {
     [state, updateState, methodOverridden, exporting],
   );
 
+  // The preview is built once and handed to whichever shell is active, so
+  // there's only ever one `#export-node` in the document for the exporters to
+  // find (see ExportBar).
+  const preview = (
+    <div lang={state.lang} dir={dir(state.lang)} className="flex h-full w-full">
+      {/* Test-support seam (see tests/studio.test.tsx): several existing
+          tests assert on the current template id and on a JSON-ish dump of
+          city/method/format/template independent of PreviewStage's own
+          rendering/loading state, so these stay visually hidden but always
+          present regardless of fetch state. */}
+      <span className="sr-only" data-testid="current-template">
+        {state.template}
+      </span>
+      <pre className="sr-only">
+        {JSON.stringify({
+          city: state.city,
+          method: state.method,
+          format: state.format,
+          template: state.template,
+        })}
+      </pre>
+
+      <PreviewStage
+        monthly={fetchState.monthly}
+        qibla={fetchState.qibla}
+        countdowns={fetchState.countdowns}
+        specialDays={fetchState.specialDays}
+        months={fetchState.months}
+        loading={fetchState.loading}
+        error={fetchState.error}
+      />
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <StudioContext.Provider value={ctxValue}>
+        <MobileStudio>{preview}</MobileStudio>
+      </StudioContext.Provider>
+    );
+  }
+
   return (
     <StudioContext.Provider value={ctxValue}>
       <div className="flex h-svh flex-col overflow-x-hidden bg-background text-foreground">
         <div className="flex flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
           <aside className="flex w-full shrink-0 flex-col gap-4 overflow-y-auto border-b border-border bg-sidebar p-4 lg:w-80 lg:border-b-0 lg:border-r">
-            <div>
-              <h1 className="text-lg font-semibold text-sidebar-foreground">Awqat Studio</h1>
-              <p className="text-xs text-muted-foreground">
-                Design a prayer-time chart in minutes.
-              </p>
-            </div>
+            <Brand />
 
             <LocationBar />
             <FormatTabs />
@@ -255,38 +312,8 @@ export function Studio() {
             </div>
           </aside>
 
-          <main
-            id="preview-region"
-            className="relative flex min-h-[60vh] flex-1 overflow-hidden bg-muted/30 lg:min-h-0"
-            lang={state.lang}
-            dir={dir(state.lang)}
-          >
-            {/* Test-support seam (see tests/studio.test.tsx): several existing
-                tests assert on the current template id and on a JSON-ish dump
-                of city/method/format/template independent of PreviewStage's
-                own rendering/loading state, so these stay visually hidden but
-                always present regardless of fetch state. */}
-            <span className="sr-only" data-testid="current-template">
-              {state.template}
-            </span>
-            <pre className="sr-only">
-              {JSON.stringify({
-                city: state.city,
-                method: state.method,
-                format: state.format,
-                template: state.template,
-              })}
-            </pre>
-
-            <PreviewStage
-              monthly={fetchState.monthly}
-              qibla={fetchState.qibla}
-              countdowns={fetchState.countdowns}
-              specialDays={fetchState.specialDays}
-              months={fetchState.months}
-              loading={fetchState.loading}
-              error={fetchState.error}
-            />
+          <main id="preview-region" className="relative flex min-h-0 flex-1 overflow-hidden bg-muted/30">
+            {preview}
           </main>
 
           <aside className="w-full shrink-0 overflow-y-auto border-t border-border p-4 lg:w-72 lg:border-t-0 lg:border-l">
@@ -297,45 +324,8 @@ export function Studio() {
         <ExportBar />
 
         <div className="flex shrink-0 flex-col gap-1 border-t border-border bg-muted/20 px-4 py-2 text-xs text-muted-foreground">
-          <p>
-            Times are computed from the Miqaat API — verify with your local authority before
-            relying on them for worship.
-          </p>
-          <footer className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span>Built on the same toolkit:</span>
-            <a
-              href="https://miqaat-dev.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline decoration-dotted underline-offset-2 hover:text-foreground"
-            >
-              Miqaat API
-            </a>
-            <a
-              href="https://swelter-dev.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline decoration-dotted underline-offset-2 hover:text-foreground"
-            >
-              Swelter
-            </a>
-            <a
-              href="https://declino.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline decoration-dotted underline-offset-2 hover:text-foreground"
-            >
-              Declino
-            </a>
-            <a
-              href="https://tessera-zeta-dev.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline decoration-dotted underline-offset-2 hover:text-foreground"
-            >
-              Tessera
-            </a>
-          </footer>
+          <DisclaimerText />
+          <ToolkitLinks className="flex flex-wrap items-center gap-x-3 gap-y-1" />
         </div>
       </div>
     </StudioContext.Provider>
