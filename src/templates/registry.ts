@@ -9,6 +9,7 @@ import { PersonalMonthly } from "./monthly/PersonalMonthly";
 import { OrgMonthly } from "./monthly/OrgMonthly";
 import { RamadanMonthly } from "./monthly/RamadanMonthly";
 import { YearPoster } from "./year/YearPoster";
+import { OrgYearPoster } from "./year/OrgYearPoster";
 
 export type TemplateProps = {
   monthly: MonthlyResponse;
@@ -33,6 +34,13 @@ export type TemplateDef = {
   format: "daily" | "monthly" | "year";
   Component: React.FC<TemplateProps>;
   thumbnail?: string;
+  /**
+   * Whether this template renders the Qibla compass (`state.showQibla`). Only
+   * the daily cards have room for it; the monthly/year layouts don't, so the
+   * "Show Qibla" toggle is hidden for them rather than offering a dead control.
+   * See CustomizePanel.
+   */
+  showsQibla?: boolean;
 };
 
 export const TEMPLATES: TemplateDef[] = [
@@ -42,6 +50,7 @@ export const TEMPLATES: TemplateDef[] = [
     lane: "personal",
     format: "daily",
     Component: PersonalDaily,
+    showsQibla: true,
   },
   {
     id: "daily-org",
@@ -49,6 +58,7 @@ export const TEMPLATES: TemplateDef[] = [
     lane: "organization",
     format: "daily",
     Component: OrgDaily,
+    showsQibla: true,
   },
   {
     id: "monthly-classic",
@@ -77,6 +87,13 @@ export const TEMPLATES: TemplateDef[] = [
     lane: "personal",
     format: "year",
     Component: YearPoster,
+  },
+  {
+    id: "year-org",
+    name: "Year Masjid Schedule",
+    lane: "organization",
+    format: "year",
+    Component: OrgYearPoster,
   },
 ];
 
