@@ -300,7 +300,7 @@ export function Studio() {
     <StudioContext.Provider value={ctxValue}>
       <div className="flex h-svh flex-col overflow-x-hidden bg-background text-foreground">
         <div className="flex flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
-          <aside className="flex w-full shrink-0 flex-col gap-4 overflow-y-auto border-b border-border bg-sidebar p-4 lg:w-80 lg:border-b-0 lg:border-r">
+          <aside className="relative flex w-full shrink-0 flex-col gap-4 overflow-y-auto border-b border-border bg-sidebar p-4 lg:w-80 lg:border-b-0 lg:border-r">
             <Brand />
 
             <LocationBar />
@@ -316,7 +316,7 @@ export function Studio() {
             {preview}
           </main>
 
-          <aside className="w-full shrink-0 overflow-y-auto border-t border-border p-4 lg:w-72 lg:border-t-0 lg:border-l">
+          <aside className="relative w-full shrink-0 overflow-y-auto border-t border-border p-4 lg:w-72 lg:border-t-0 lg:border-l">
             <CustomizePanel />
           </aside>
         </div>
