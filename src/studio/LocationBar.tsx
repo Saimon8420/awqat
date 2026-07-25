@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MapPinIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -158,17 +159,21 @@ export function LocationBar({ hideLabel = false }: { hideLabel?: boolean } = {})
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={useMyLocation}
-          disabled={locating}
-        >
-          {locating ? "Locating…" : "Use my location"}
-        </Button>
-      </div>
+      {/* A quiet secondary action under the search field: emerald text with a
+          pin, flush-left with the input (the negative margin cancels the
+          ghost's padding), and a soft parchment hover fill. */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={useMyLocation}
+        disabled={locating}
+        aria-busy={locating}
+        className="-ml-2.5 w-fit gap-1.5 text-primary hover:text-primary"
+      >
+        <MapPinIcon className={locating ? "animate-pulse" : undefined} />
+        {locating ? "Locating…" : "Use my current location"}
+      </Button>
 
       {locateError && (
         <p className="text-xs text-destructive" role="alert">
