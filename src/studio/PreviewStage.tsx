@@ -115,9 +115,7 @@ export function PreviewStage({
           context's `exporting` flag as a belt-and-suspenders seam for Task
           16's export pipeline. */}
       {state.format === "daily" && monthly && (
-        <div className="absolute right-2 top-2 z-10 rounded-full border border-border bg-background/90 px-2.5 py-1 text-xs shadow-sm backdrop-blur lg:right-4 lg:top-4 lg:px-3 lg:py-1.5">
-          <LiveCountdown monthly={monthly} state={state} frozen={exporting} />
-        </div>
+        <LiveCountdown monthly={monthly} state={state} frozen={exporting} />
       )}
 
       {loading && !monthly && (
