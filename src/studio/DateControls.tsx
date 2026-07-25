@@ -131,7 +131,13 @@ export function DateControls({ inline = false }: { inline?: boolean } = {}) {
           </Popover>
         )
       ) : (
-        <div className="grid grid-cols-2 gap-2">
+        // Monthly needs Year + Month; the year poster spans all 12 months, so
+        // a Month picker there is meaningless — show Year alone.
+        <div
+          className={
+            state.format === "year" ? "flex flex-col gap-2" : "grid grid-cols-2 gap-2"
+          }
+        >
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="year-select" className="text-xs font-normal text-muted-foreground">
               Year
@@ -154,27 +160,29 @@ export function DateControls({ inline = false }: { inline?: boolean } = {}) {
             </Select>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="month-select" className="text-xs font-normal text-muted-foreground">
-              Month
-            </Label>
-            <Select
-              items={MONTH_ITEMS}
-              value={String(state.month)}
-              onValueChange={(v) => changeMonth(String(v))}
-            >
-              <SelectTrigger id="month-select" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MONTH_NAMES.map((name, i) => (
-                  <SelectItem key={name} value={String(i + 1)}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {state.format !== "year" && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="month-select" className="text-xs font-normal text-muted-foreground">
+                Month
+              </Label>
+              <Select
+                items={MONTH_ITEMS}
+                value={String(state.month)}
+                onValueChange={(v) => changeMonth(String(v))}
+              >
+                <SelectTrigger id="month-select" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTH_NAMES.map((name, i) => (
+                    <SelectItem key={name} value={String(i + 1)}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       )}
     </div>

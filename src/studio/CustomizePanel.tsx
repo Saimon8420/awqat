@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { useStudio } from "./context";
 import { BackgroundField } from "./BackgroundField";
 import { CalculationFields } from "./CalculationFields";
-import { PersonalizeFields } from "./PersonalizeFields";
+import { PersonalizeFields, templateShowsQibla } from "./PersonalizeFields";
 
 const NONE = "none";
 
@@ -321,15 +321,18 @@ export function CustomizePanel({ hideHeading = false }: { hideHeading?: boolean 
           </div>
         </section>
 
-        {/* Qibla */}
-        <section className="flex items-center justify-between gap-2">
-          <Label htmlFor="qibla-switch">Show Qibla</Label>
-          <Switch
-            id="qibla-switch"
-            checked={state.showQibla}
-            onCheckedChange={(checked) => updateState({ showQibla: checked })}
-          />
-        </section>
+        {/* Qibla — only the daily cards render the compass, so the toggle is
+            hidden on monthly/year where it would do nothing. */}
+        {templateShowsQibla(state) && (
+          <section className="flex items-center justify-between gap-2">
+            <Label htmlFor="qibla-switch">Show Qibla</Label>
+            <Switch
+              id="qibla-switch"
+              checked={state.showQibla}
+              onCheckedChange={(checked) => updateState({ showQibla: checked })}
+            />
+          </section>
+        )}
       </SettingsGroup>
 
       <SettingsGroup title="Personalize">
