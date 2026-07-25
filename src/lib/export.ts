@@ -1,4 +1,4 @@
-import { toPng } from "html-to-image";
+import { toJpeg, toPng } from "html-to-image";
 import { saveAs } from "file-saver";
 import { jsPDF } from "jspdf";
 import JSZip from "jszip";
@@ -76,11 +76,27 @@ export function fitToPage(
   return { x: (page.width - w) / 2, y: (page.height - h) / 2, w, h };
 }
 
+// A4/A3 sheet sizes in points (portrait: [short, long]). Used only to bound
+// how large the content-shaped PDF page may be for the chosen paper.
+const SHEETS: Record<"a4" | "a3", readonly [number, number]> = {
+  a4: [595.28, 841.89],
+  a3: [841.89, 1190.55],
+};
+
 /**
  * Captures `node` (expected to be `#export-node`, same convention as
- * `exportPng`) to a PNG, embeds it — fit-to-page and centered, aspect ratio
- * preserved — into a new single-page `jsPDF` document, and triggers a
+ * `exportPng`) and embeds it into a single-page `jsPDF`, then triggers a
  * browser download named `opts.filename`.
+ *
+ * Two deliberate choices, both fixing user-reported problems:
+ *  - **JPEG, not PNG.** A lossless PNG of a full-bleed poster ran ~24 MB;
+ *    a quality-0.92 JPEG of the same card is a fraction of that with no
+ *    visible loss, and text stays crisp because it's captured at 2x first.
+ *  - **The PDF page is shaped to the CONTENT, not to A4/A3.** The card's
+ *    aspect (story 9:16, square, post 4:5, monthly landscape…) rarely matches
+ *    paper, so the old fixed-A4 page letterboxed the image with white bands.
+ *    Instead the page is the content's aspect ratio, scaled to fit within the
+ *    chosen sheet — so the card fills the page edge to edge, no white margins.
  *
  * Like `exportPng`, awaits `document.fonts.ready` first so webfonts are
  * loaded before html-to-image serializes the node.
@@ -90,19 +106,31 @@ export async function exportPdf(
   opts: { size: "a4" | "a3"; orientation: "portrait" | "landscape"; filename: string },
 ): Promise<void> {
   await document.fonts.ready;
-  // Same transform-neutralizing / tight-crop capture as exportPng (2x is
-  // ample once it's embedded in a vector PDF page and keeps the file lean).
-  const dataUrl = await toPng(node, captureOptions(node, 2));
+  // Same transform-neutralizing / tight-crop capture as exportPng, as a JPEG
+  // (2x + q0.92 keeps it crisp while shrinking the file dramatically).
+  const dataUrl = await toJpeg(node, { ...captureOptions(node, 2), quality: 0.92 });
 
-  const pdf = new jsPDF({ format: opts.size, orientation: opts.orientation, unit: "pt" });
-  const page = { width: pdf.internal.pageSize.getWidth(), height: pdf.internal.pageSize.getHeight() };
-  // toPng preserves the node's on-screen aspect ratio, so node.offsetWidth /
-  // node.offsetHeight (not the captured raster's pixel-ratio-scaled size) is
-  // the correct aspect-ratio source for the fit math.
-  const img = { width: node.offsetWidth || 1, height: node.offsetHeight || 1 };
-  const { x, y, w, h } = fitToPage(img, page);
+  const [short, long] = SHEETS[opts.size];
+  const sheet =
+    opts.orientation === "landscape"
+      ? { width: long, height: short }
+      : { width: short, height: long };
+  // The node's on-screen box gives the correct aspect ratio (offsetWidth/Height,
+  // not the pixel-ratio-scaled raster). Fit that aspect inside the sheet to get
+  // the page size; the image then fills the whole page.
+  const content = { width: node.offsetWidth || 1, height: node.offsetHeight || 1 };
+  const { w, h } = fitToPage(content, sheet);
 
-  pdf.addImage(dataUrl, "PNG", x, y, w, h);
+  const pdf = new jsPDF({
+    unit: "pt",
+    format: [w, h],
+    orientation: w >= h ? "landscape" : "portrait",
+  });
+  // Read back the actual page box (jsPDF may normalize the format array) so
+  // the image fills it exactly regardless of any reordering.
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  pdf.addImage(dataUrl, "JPEG", 0, 0, pageW, pageH, undefined, "FAST");
   pdf.save(opts.filename);
 }
 
