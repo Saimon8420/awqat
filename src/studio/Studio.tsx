@@ -323,9 +323,9 @@ export function Studio() {
 
         <ExportBar />
 
-        <div className="flex shrink-0 flex-col gap-1 border-t border-border bg-muted/20 px-4 py-2 text-xs text-muted-foreground">
-          <DisclaimerText />
-          <ToolkitLinks className="flex flex-wrap items-center gap-x-3 gap-y-1" />
+        <div className="flex shrink-0 flex-col gap-1.5 border-t border-border bg-muted/20 px-4 py-2.5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <DisclaimerText className="max-w-prose" />
+          <ToolkitLinks className="shrink-0" />
         </div>
       </div>
     </StudioContext.Provider>

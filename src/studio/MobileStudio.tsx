@@ -148,7 +148,7 @@ export function MobileStudio({ children }: { children: ReactNode }) {
             {panel === "about" && (
               <div className="flex flex-col gap-3 pb-2 text-xs text-muted-foreground">
                 <DisclaimerText />
-                <ToolkitLinks className="flex flex-wrap items-center gap-x-3 gap-y-1" />
+                <ToolkitLinks />
               </div>
             )}
           </SheetContent>
