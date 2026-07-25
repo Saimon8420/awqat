@@ -95,7 +95,7 @@ export function PersonalizeFields() {
           <Input
             id="personal-greeting-input"
             value={personal.greeting ?? ""}
-            placeholder="e.g. Ramadan Mubarak, Ayesha!"
+            placeholder="e.g. Ramadan Mubarak!"
             onChange={(e) =>
               updateState({ personal: { ...state.personal, greeting: e.target.value } })
             }
