@@ -28,10 +28,14 @@ const MONTH_NAMES = [
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
-// A generous but bounded window around "now" — Miqaat's underlying API
-// supports arbitrary years, but an unbounded picker isn't practical, and
-// this range comfortably covers past-record and near-future planning use.
-const YEAR_OPTIONS = Array.from({ length: 12 }, (_, i) => CURRENT_YEAR - 4 + i);
+// A few years back for past-record use, then far forward (through 2100) for
+// long-range planning. Miqaat's underlying API supports arbitrary years.
+const YEAR_START = CURRENT_YEAR - 4;
+const YEAR_END = 2100;
+const YEAR_OPTIONS = Array.from(
+  { length: YEAR_END - YEAR_START + 1 },
+  (_, i) => YEAR_START + i,
+);
 // value → label maps so the Select triggers read as "March" / "2026" rather
 // than the raw stored value (see Base UI Select's `items` prop).
 const MONTH_ITEMS: Record<string, string> = Object.fromEntries(
@@ -40,8 +44,8 @@ const MONTH_ITEMS: Record<string, string> = Object.fromEntries(
 const YEAR_ITEMS: Record<string, string> = Object.fromEntries(
   YEAR_OPTIONS.map((y) => [String(y), String(y)]),
 );
-const START_MONTH = new Date(CURRENT_YEAR - 4, 0);
-const END_MONTH = new Date(CURRENT_YEAR + 7, 11);
+const START_MONTH = new Date(YEAR_START, 0);
+const END_MONTH = new Date(YEAR_END, 11);
 
 const TRIGGER_FORMAT = new Intl.DateTimeFormat(undefined, {
   weekday: "short",
