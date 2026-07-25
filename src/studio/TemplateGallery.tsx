@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { templatesFor, type TemplateDef } from "@/templates/registry";
@@ -71,18 +72,14 @@ function TemplateThumb({ format }: { format: TemplateDef["format"] }) {
 export function TemplateGallery() {
   const { state, updateState, setTemplateTouched } = useStudio();
 
-  function pickTemplate(id: string) {
-    updateState({ template: id });
-    // A manual pick from the gallery — remember it so the Ramadan
-    // auto-suggest (see Studio.tsx) never overrides an explicit choice.
-    setTemplateTouched(true);
-  }
-
   const byLane: Record<TemplateDef["lane"], TemplateDef[]> = {
     personal: templatesFor(state.format, "personal"),
     organization: templatesFor(state.format, "organization"),
   };
 
+  // Which lane the current template belongs to (falls back to the first
+  // non-empty lane). Seeds the tab and keeps it in sync when the template
+  // changes from elsewhere.
   const activeLane: TemplateDef["lane"] = byLane.personal.some((t) => t.id === state.template)
     ? "personal"
     : byLane.organization.some((t) => t.id === state.template)
@@ -91,11 +88,37 @@ export function TemplateGallery() {
         ? "personal"
         : "organization";
 
+  const [lane, setLane] = useState<TemplateDef["lane"]>(activeLane);
+
+  function pickTemplate(id: string) {
+    updateState({ template: id });
+    // A manual pick from the gallery — remember it so the Ramadan
+    // auto-suggest (see Studio.tsx) never overrides an explicit choice.
+    setTemplateTouched(true);
+  }
+
+  // Switching lane applies that lane's first design straight away, so a
+  // single-card lane needs no second click (the Daily/Monthly/Year tabs
+  // already work this way). Empty lanes just switch the view.
+  function changeLane(next: TemplateDef["lane"]) {
+    setLane(next);
+    const first = byLane[next][0];
+    if (first) {
+      updateState({ template: first.id });
+      setTemplateTouched(true);
+    }
+  }
+
   return (
-    // Remounts (via `key`) when the format changes so the default active
-    // lane is re-derived instead of sticking to a lane that no longer
-    // contains the current template.
-    <Tabs key={state.format} defaultValue={activeLane} className="flex flex-col gap-2">
+    // Remounts (via `key`) when the format changes so the active lane is
+    // re-seeded instead of sticking to a lane that no longer contains the
+    // current template.
+    <Tabs
+      key={state.format}
+      value={lane}
+      onValueChange={(value) => changeLane(value as TemplateDef["lane"])}
+      className="flex flex-col gap-2"
+    >
       <TabsList className="w-full">
         {LANES.map((l) => (
           <TabsTrigger key={l.value} value={l.value} className="flex-1">

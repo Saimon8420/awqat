@@ -44,7 +44,7 @@ export function Segmented<T extends string>({
             className={cn(
               "rounded-md px-2.5 py-1 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
               active
-                ? "bg-background text-foreground shadow-sm"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
