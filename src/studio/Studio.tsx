@@ -25,6 +25,7 @@ import { DisclaimerText, ToolkitLinks } from "./SiteNotes";
 import { LocationBar } from "./LocationBar";
 import { FormatTabs } from "./FormatTabs";
 import { DateControls } from "./DateControls";
+import { SectionHeader } from "./SectionHeader";
 import { PreviewStage } from "./PreviewStage";
 import { TemplateGallery } from "./TemplateGallery";
 import { CustomizePanel } from "./CustomizePanel";
@@ -304,8 +305,12 @@ export function Studio() {
             <Brand />
 
             <LocationBar />
+
+            {/* Date group: the "Date" header, then the format tabs, then the
+                matching date selectors under them. */}
+            <SectionHeader title="Date" className="border-primary/70" />
             <FormatTabs />
-            <DateControls />
+            <DateControls hideHeader />
 
             <div className="flex flex-1 flex-col overflow-y-auto">
               <TemplateGallery />

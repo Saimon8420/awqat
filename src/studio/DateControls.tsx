@@ -66,7 +66,10 @@ function daysInMonth(year: number, month: number): number {
  * Either way, changes flow through `updateState`, which Studio's fetch effect
  * is keyed on, so the preview refetches/re-renders automatically.
  */
-export function DateControls({ inline = false }: { inline?: boolean } = {}) {
+export function DateControls({
+  inline = false,
+  hideHeader = false,
+}: { inline?: boolean; hideHeader?: boolean } = {}) {
   const { state, updateState } = useStudio();
 
   const selectedDate = new Date(state.year, state.month - 1, state.day);
@@ -128,8 +131,10 @@ export function DateControls({ inline = false }: { inline?: boolean } = {}) {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Inline (the mobile sheet) already has "Date" in its header. */}
-      {!inline && <SectionHeader title="Date" className="border-primary/70" />}
+      {/* Inline (the mobile sheet) already has "Date" in its header; the
+          desktop aside can also render the header itself (above the format
+          tabs) via `hideHeader`. */}
+      {!inline && !hideHeader && <SectionHeader title="Date" className="border-primary/70" />}
 
       {state.format === "daily" ? (
         // In a bottom sheet the sheet itself is the surface, so the calendar
