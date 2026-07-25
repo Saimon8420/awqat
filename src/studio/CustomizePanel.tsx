@@ -16,6 +16,7 @@ import { THEMES } from "@/templates/themes";
 import { MOTIFS } from "@/graphics";
 import { PRAYER_ROW_KEYS, ROW_LABEL_KEYS } from "@/templates/shared";
 import { label, type Lang } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { useStudio } from "./context";
 import { BackgroundField } from "./BackgroundField";
 import { CalculationFields } from "./CalculationFields";
@@ -286,24 +287,37 @@ export function CustomizePanel({ hideHeading = false }: { hideHeading?: boolean 
         {/* How the times are computed (method + Asr madhab). */}
         <CalculationFields />
 
-        {/* Row visibility */}
+        {/* Row visibility — which prayers appear on the card. An even 3×2 grid
+            of equal-width toggle chips (styled buttons, aria-pressed) reads as a
+            tidy set rather than ragged tags; each flips the same showRows
+            boolean. Solid-emerald = shown, matching the app's active-state color. */}
         <section className="flex flex-col gap-2">
-          <Label>Prayer rows</Label>
-          <div className="flex flex-col gap-2">
-            {PRAYER_ROW_KEYS.map((key) => (
-              <div key={key} className="flex items-center justify-between gap-2">
-                <Label htmlFor={`row-switch-${key}`} className="font-normal">
-                  {label(ROW_LABEL_KEYS[key], "en")}
-                </Label>
-                <Switch
-                  id={`row-switch-${key}`}
-                  checked={state.showRows[key] !== false}
-                  onCheckedChange={(checked) =>
-                    updateState({ showRows: { ...state.showRows, [key]: checked } })
+          <div className="flex items-baseline justify-between gap-2">
+            <Label>Prayer rows</Label>
+            <span className="text-[0.7rem] text-muted-foreground">Shown on card</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {PRAYER_ROW_KEYS.map((key) => {
+              const shown = state.showRows[key] !== false;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={shown}
+                  onClick={() =>
+                    updateState({ showRows: { ...state.showRows, [key]: !shown } })
                   }
-                />
-              </div>
-            ))}
+                  className={cn(
+                    "flex items-center justify-center rounded-md border px-2 py-1.5 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    shown
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                  )}
+                >
+                  {label(ROW_LABEL_KEYS[key], "en")}
+                </button>
+              );
+            })}
           </div>
         </section>
 
