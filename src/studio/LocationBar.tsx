@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { MapPinIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { SectionHeader } from "./SectionHeader";
 import {
   currentLocation,
   defaultMethod,
@@ -95,17 +95,14 @@ export function LocationBar({ hideLabel = false }: { hideLabel?: boolean } = {})
 
   return (
     <div className="flex flex-col gap-2">
-      {/* When the surrounding sheet header already reads "Location", the
-          visible copy would just repeat it — but the input still needs its
-          label for assistive tech, so it goes visually hidden rather than
-          away. */}
-      <Label htmlFor="location-search" className={hideLabel ? "sr-only" : undefined}>
-        Location
-      </Label>
+      {/* The mobile sheet header already reads "Location", so the section
+          header is desktop-only; the input keeps its aria-label either way. */}
+      {!hideLabel && <SectionHeader title="Location" className="border-primary/70" />}
 
       <div className="relative">
         <Input
           id="location-search"
+          aria-label="Location"
           value={query}
           placeholder="Search for a city…"
           autoComplete="off"

@@ -11,6 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { useStudio } from "./context";
+import { SectionHeader } from "./SectionHeader";
 
 const MONTH_NAMES = [
   "January",
@@ -128,7 +129,7 @@ export function DateControls({ inline = false }: { inline?: boolean } = {}) {
   return (
     <div className="flex flex-col gap-2">
       {/* Inline (the mobile sheet) already has "Date" in its header. */}
-      {!inline && <Label>Date</Label>}
+      {!inline && <SectionHeader title="Date" className="border-primary/70" />}
 
       {state.format === "daily" ? (
         // In a bottom sheet the sheet itself is the surface, so the calendar

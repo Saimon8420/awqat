@@ -316,7 +316,7 @@ export function Studio() {
             {preview}
           </main>
 
-          <aside className="relative w-full shrink-0 overflow-y-auto border-t border-border p-4 lg:w-72 lg:border-t-0 lg:border-l">
+          <aside className="relative w-full shrink-0 overflow-y-auto border-t border-border px-4 pb-4 lg:w-72 lg:border-t-0 lg:border-l">
             <CustomizePanel />
           </aside>
         </div>

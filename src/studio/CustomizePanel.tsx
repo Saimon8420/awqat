@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Select,
   SelectContent,
@@ -21,6 +21,7 @@ import { useStudio } from "./context";
 import { BackgroundField } from "./BackgroundField";
 import { CalculationFields } from "./CalculationFields";
 import { PersonalizeFields, templateShowsQibla } from "./PersonalizeFields";
+import { SectionHeader } from "./SectionHeader";
 
 const NONE = "none";
 
@@ -75,17 +76,49 @@ const NUMERAL_ITEMS: Record<string, string> = Object.fromEntries(
  * know which category you're in while scrolling a long panel.
  */
 function SettingsGroup({ title, children }: { title: string; children: ReactNode }) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  // Whether the header is currently pinned to the top of the scroll container.
+  const [stuck, setStuck] = useState(false);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || typeof IntersectionObserver !== "function") return;
+    // Watch a 1px sentinel sitting at the group's top against the nearest
+    // scrollable ancestor (the desktop aside or the mobile sheet body). When it
+    // scrolls out of the top, the header is pinned — so we can elevate it.
+    let root: HTMLElement | null = sentinel.parentElement;
+    while (root && root !== document.body) {
+      const oy = getComputedStyle(root).overflowY;
+      if (oy === "auto" || oy === "scroll") break;
+      root = root.parentElement;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => setStuck(!entry.isIntersecting),
+      { root: root ?? null, threshold: [0] },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section className="flex flex-col gap-4">
-      {/* Full-bleed sticky band (negative margin cancels the panel's p-4 so it
+    <section className="relative flex flex-col gap-4">
+      {/* Sentinel at the group's top edge; its leaving the scrollport tells us
+          the header below has pinned (see effect above). */}
+      <div ref={sentinelRef} aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-px" />
+      {/* Full-bleed sticky band (negative margin cancels the panel's px-4 so it
           spans edge to edge) with a small emerald tick, so each group reads as
-          a deliberate section anchor rather than a floating gray label. */}
-      <h3 className="sticky top-0 z-10 -mx-4 flex items-center gap-2 border-b border-border/70 bg-background/92 px-4 py-2 backdrop-blur-sm">
-        <span className="h-3.5 w-1 rounded-full bg-primary" aria-hidden="true" />
-        <span className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-foreground/75">
-          {title}
-        </span>
-      </h3>
+          a deliberate section anchor rather than a floating gray label. When
+          pinned it gains a soft drop shadow so it visibly floats above the
+          scrolling content. */}
+      <SectionHeader
+        title={title}
+        className={cn(
+          "sticky top-0 z-10 bg-background transition-[box-shadow,border-color] duration-150",
+          stuck
+            ? "border-primary shadow-[0_6px_14px_-6px_rgba(15,157,99,0.45)]"
+            : "border-primary/70",
+        )}
+      />
       {children}
     </section>
   );
@@ -109,7 +142,11 @@ export function CustomizePanel({ hideHeading = false }: { hideHeading?: boolean 
   const accentValue = isCustomAccent ? state.accent : currentTheme.accent;
 
   return (
-    <div className="flex flex-col gap-6 text-sm">
+    // The scroll container (desktop aside) drops its top padding so sticky
+    // group headers pin flush to the very top — no gap for content to peek
+    // through above a header. `pt-4` restores the resting top breathing room
+    // here (it scrolls away). The mobile sheet supplies its own top spacing.
+    <div className={cn("flex flex-col gap-6 text-sm", !hideHeading && "pt-4")}>
       {!hideHeading && (
         <div>
           <h2 className="text-sm font-semibold text-foreground">Customize</h2>
