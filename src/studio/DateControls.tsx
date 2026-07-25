@@ -1,4 +1,4 @@
-import { CalendarIcon } from "lucide-react";
+import { CalendarClock, CalendarIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -104,6 +104,27 @@ export function DateControls({ inline = false }: { inline?: boolean } = {}) {
     updateState({ month, day: clampedDay });
   }
 
+  // Whether the selection already points at the current period (the day for
+  // "daily", the month for "monthly", the year for "year") — so the
+  // "jump to now" shortcut only appears once you've navigated away from it.
+  const nowLocal = new Date();
+  const curY = nowLocal.getFullYear();
+  const curM = nowLocal.getMonth() + 1;
+  const curD = nowLocal.getDate();
+  const isCurrentPeriod =
+    state.format === "year"
+      ? state.year === curY
+      : state.format === "monthly"
+        ? state.year === curY && state.month === curM
+        : state.year === curY && state.month === curM && state.day === curD;
+  const todayActionLabel =
+    state.format === "year" ? "This year" : state.format === "monthly" ? "This month" : "Jump to today";
+
+  function goToday() {
+    const n = new Date();
+    updateState({ year: n.getFullYear(), month: n.getMonth() + 1, day: n.getDate() });
+  }
+
   return (
     <div className="flex flex-col gap-2">
       {/* Inline (the mobile sheet) already has "Date" in its header. */}
@@ -188,6 +209,19 @@ export function DateControls({ inline = false }: { inline?: boolean } = {}) {
             </div>
           )}
         </div>
+      )}
+
+      {!isCurrentPeriod && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={goToday}
+          className="w-fit gap-1.5 self-start px-2 text-primary hover:text-primary"
+        >
+          <CalendarClock className="size-3.5" />
+          {todayActionLabel}
+        </Button>
       )}
     </div>
   );
