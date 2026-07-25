@@ -36,7 +36,9 @@ function hexAlpha(color: string, alpha: number): string {
 // viewBox to fit the element and so stretches into a few big glyphs on a tall
 // card), a data URI tiled at a fixed `background-size` stays a crisp,
 // consistent mosaic at any card dimension.
-const TILE: Record<"girih" | "zellij", { size: number; svg: (c: string) => string }> = {
+type TileKey = "girih" | "zellij" | "muqarnas" | "arabesque";
+
+const TILE: Record<TileKey, { size: number; svg: (c: string) => string }> = {
   girih: {
     size: 50,
     svg: (c) =>
@@ -47,9 +49,19 @@ const TILE: Record<"girih" | "zellij", { size: number; svg: (c: string) => strin
     svg: (c) =>
       `<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'><g fill='none' stroke='${c}' stroke-width='1'><path d='M22 3 L27 17 L41 22 L27 27 L22 41 L17 27 L3 22 L17 17 Z'/><path d='M0 0 L6 0 L0 6 Z M44 0 L38 0 L44 6 Z M0 44 L6 44 L0 38 Z M44 44 L38 44 L44 38 Z'/></g></svg>`,
   },
+  muqarnas: {
+    size: 26,
+    svg: (c) =>
+      `<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'><g fill='none' stroke='${c}' stroke-width='1.1'><path d='M3 25 V12 Q13 2 23 12 V25'/></g></svg>`,
+  },
+  arabesque: {
+    size: 42,
+    svg: (c) =>
+      `<svg xmlns='http://www.w3.org/2000/svg' width='42' height='42' viewBox='0 0 42 42'><g fill='none' stroke='${c}' stroke-width='1.1' stroke-linecap='round'><path d='M0 21 C8 8 17 8 21 21 C25 34 34 34 42 21'/><path d='M11 15 q4 -6 8 -1'/><path d='M23 27 q4 6 8 1'/></g></svg>`,
+  },
 };
 
-function tileStyle(kind: "girih" | "zellij", color: string, opacity: number): CSSProperties {
+function tileStyle(kind: TileKey, color: string, opacity: number): CSSProperties {
   const t = TILE[kind];
   return {
     backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(t.svg(color))}")`,
@@ -160,7 +172,13 @@ function MotifDecor({
   const { Svg, kind } = motif;
 
   if (kind === "texture") {
-    const k = motif.id === "zellij" ? "zellij" : "girih";
+    // Texture motifs render via the fixed-size CSS tile engine (not their own
+    // <pattern> SVG), so map the motif id to its tile; unknown ids fall back
+    // to the girih lattice.
+    const k: TileKey =
+      motif.id === "zellij" || motif.id === "muqarnas" || motif.id === "arabesque"
+        ? motif.id
+        : "girih";
     return <div className="absolute inset-0" style={tileStyle(k, accent, 0.16)} />;
   }
 

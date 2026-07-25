@@ -267,6 +267,232 @@ export const ZellijPattern: FC<MotifIconProps> = ({ className, color }) => {
   );
 };
 
+/** Rub el Hizb (۞) — the eight-point octagram of two overlaid squares with a
+ * central boss; a classic Islamic marker. */
+export const RubElHizb: FC<MotifIconProps> = ({ className, color }) => (
+  <svg
+    viewBox="0 0 100 100"
+    className={className}
+    style={motifStyle(color)}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="3"
+    aria-hidden="true"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <rect x="24" y="24" width="52" height="52" />
+    <rect x="24" y="24" width="52" height="52" transform="rotate(45 50 50)" />
+    <circle cx="50" cy="50" r="9" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+/** A shamsa — a radiant medallion of sixteen pointed rays around concentric
+ * rings, the sunburst rosette that centres many illuminated frontispieces. */
+export const Shamsa: FC<MotifIconProps> = ({ className, color }) => {
+  const rays = Array.from({ length: 16 }, (_, i) => {
+    const tip = (i * Math.PI * 2) / 16;
+    const left = ((i - 0.5) * Math.PI * 2) / 16;
+    const right = ((i + 0.5) * Math.PI * 2) / 16;
+    const p = (a: number, r: number) =>
+      `${(50 + Math.cos(a) * r).toFixed(1)} ${(50 + Math.sin(a) * r).toFixed(1)}`;
+    return `M${p(left, 31)} L${p(tip, 45)} L${p(right, 31)} Z`;
+  }).join(" ");
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={className}
+      style={motifStyle(color)}
+      fill="currentColor"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d={rays} />
+      <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="2" />
+      <circle cx="50" cy="50" r="20" fill="none" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="50" cy="50" r="7" />
+    </svg>
+  );
+};
+
+/** A muqarnas-style honeycomb lattice — a field of stacked pointed niches,
+ * evoking the carved vaulting over a mihrab or portal. */
+export const MuqarnasPattern: FC<MotifIconProps> = ({ className, color }) => {
+  const id = useId();
+  const patternId = `muqarnas-${id}`;
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={className}
+      style={motifStyle(color)}
+      fill="currentColor"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <pattern id={patternId} width="26" height="26" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="currentColor" strokeWidth="1.1">
+            <path d="M3 25 V12 Q13 2 23 12 V25" />
+          </g>
+        </pattern>
+      </defs>
+      <rect x="0" y="0" width="100" height="100" fill={`url(#${patternId})`} />
+    </svg>
+  );
+};
+
+/** An arabesque (islimi) field — interlacing vine scrollwork with sprouting
+ * leaves, tiled as a continuous foliate lattice. */
+export const ArabesquePattern: FC<MotifIconProps> = ({ className, color }) => {
+  const id = useId();
+  const patternId = `arabesque-${id}`;
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={className}
+      style={motifStyle(color)}
+      fill="currentColor"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <pattern id={patternId} width="42" height="42" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round">
+            <path d="M0 21 C8 8 17 8 21 21 C25 34 34 34 42 21" />
+            <path d="M11 15 q4 -6 8 -1" />
+            <path d="M23 27 q4 6 8 1" />
+          </g>
+        </pattern>
+      </defs>
+      <rect x="0" y="0" width="100" height="100" fill={`url(#${patternId})`} />
+    </svg>
+  );
+};
+
+/** A multifoil (cusped) arch drawn as a hollow frame — like the mihrab arch
+ * but with a scalloped, lobed crown. Stretched to the card bounds. */
+export const MultifoilArch: FC<MotifIconProps> = ({ className, color }) => (
+  <svg
+    viewBox="0 0 100 140"
+    className={className}
+    style={motifStyle(color)}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.4"
+    aria-hidden="true"
+    preserveAspectRatio="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M12 138 V56 Q12 38 30 32 a9 9 0 0 1 12 0 a9 9 0 0 1 8 0 a9 9 0 0 1 12 0 Q88 38 88 56 V138" />
+    <path
+      d="M19 138 V58 Q19 43 34 38 a8 8 0 0 1 11 0 a8 8 0 0 1 7 0 a8 8 0 0 1 11 0 Q81 43 81 58 V138"
+      strokeWidth="0.8"
+      strokeOpacity="0.6"
+    />
+  </svg>
+);
+
+/** An angular square-Kufic border — a right-angled meander strip, the
+ * geometric key pattern that runs along tilework and manuscript margins. */
+export const KuficBorder: FC<MotifIconProps> = ({ className, color }) => {
+  const id = useId();
+  const patternId = `kufic-${id}`;
+  return (
+    <svg
+      viewBox="0 0 200 20"
+      className={className}
+      style={motifStyle(color)}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <pattern id={patternId} width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M2 18 V6 H14 V14 H8 V10 H12" />
+        </pattern>
+      </defs>
+      <rect x="0" y="0" width="200" height="20" fill={`url(#${patternId})`} stroke="none" />
+    </svg>
+  );
+};
+
+/** A single slender minaret — balcony rings and a crescent finial atop a
+ * tapering shaft. */
+export const Minaret: FC<MotifIconProps> = ({ className, color }) => (
+  <svg
+    viewBox="0 0 40 100"
+    className={className}
+    style={motifStyle(color)}
+    fill="currentColor"
+    aria-hidden="true"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle cx="20" cy="6" r="2.4" />
+    <path d="M18.6 8h2.8l-.7 6h-1.4l-.7-6Z" />
+    <rect x="14" y="14" width="12" height="3.6" rx="1" />
+    <rect x="16.5" y="17.6" width="7" height="26" />
+    <rect x="12" y="43.6" width="16" height="3.6" rx="1" />
+    <rect x="15" y="47.2" width="10" height="45" />
+    <rect x="11" y="92" width="18" height="5" rx="1" />
+  </svg>
+);
+
+/** A stylized date palm — a slim trunk crowned with arcing fronds and a small
+ * cluster of dates. */
+export const DatePalm: FC<MotifIconProps> = ({ className, color }) => (
+  <svg
+    viewBox="0 0 100 100"
+    className={className}
+    style={motifStyle(color)}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="3"
+    strokeLinecap="round"
+    aria-hidden="true"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M50 96 V44" />
+    <path d="M50 44 C38 30 24 26 12 30" />
+    <path d="M50 44 C62 30 76 26 88 30" />
+    <path d="M50 44 C42 24 32 15 20 12" />
+    <path d="M50 44 C58 24 68 15 80 12" />
+    <path d="M50 44 C50 26 50 14 50 6" />
+    <g fill="currentColor" stroke="none">
+      <circle cx="46" cy="47" r="2" />
+      <circle cx="54" cy="48" r="2" />
+      <circle cx="50" cy="51" r="2" />
+    </g>
+  </svg>
+);
+
+/** A scalloped border — a run of small lobed arches, the shell edging seen
+ * along cornices and prayer-rug fields. */
+export const ScallopBorder: FC<MotifIconProps> = ({ className, color }) => {
+  const id = useId();
+  const patternId = `scallop-${id}`;
+  return (
+    <svg
+      viewBox="0 0 200 20"
+      className={className}
+      style={motifStyle(color)}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <pattern id={patternId} width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M0 15 A10 10 0 0 1 20 15" />
+          <circle cx="10" cy="6" r="1.4" fill="currentColor" stroke="none" />
+        </pattern>
+      </defs>
+      <rect x="0" y="0" width="200" height="20" fill={`url(#${patternId})`} stroke="none" />
+    </svg>
+  );
+};
+
 /**
  * How a motif wants to be placed by `DecorLayer`:
  * - `feature`: one large glyph anchored in a corner, behind a soft glow.
@@ -296,4 +522,13 @@ export const MOTIFS: Motif[] = [
   { id: "ramadan-kareem", name: "Ramadan Kareem", Svg: RamadanKareemOrnament, kind: "banner" },
   { id: "eid-mubarak", name: "Eid Mubarak", Svg: EidMubarakOrnament, kind: "banner" },
   { id: "bismillah", name: "Bismillah", Svg: BismillahOrnament, kind: "banner" },
+  { id: "rub-el-hizb", name: "Rub el Hizb", Svg: RubElHizb, kind: "feature" },
+  { id: "shamsa", name: "Shamsa Rosette", Svg: Shamsa, kind: "feature" },
+  { id: "muqarnas", name: "Muqarnas", Svg: MuqarnasPattern, kind: "texture" },
+  { id: "arabesque", name: "Arabesque", Svg: ArabesquePattern, kind: "texture" },
+  { id: "multifoil-arch", name: "Multifoil Arch", Svg: MultifoilArch, kind: "frame" },
+  { id: "kufic-border", name: "Kufic Border", Svg: KuficBorder, kind: "border" },
+  { id: "minaret", name: "Minaret", Svg: Minaret, kind: "feature" },
+  { id: "palm", name: "Date Palm", Svg: DatePalm, kind: "feature" },
+  { id: "scallop-border", name: "Scallop Border", Svg: ScallopBorder, kind: "border" },
 ];
