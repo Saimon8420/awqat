@@ -98,15 +98,15 @@ const MonthPanel = memo(function MonthPanel({
         >
           <thead>
             <tr style={{ borderBottom: `1px solid ${accent}` }}>
-              <th className="px-0.5 py-px text-center font-semibold">{label("day", lang)}</th>
-              <th className="px-0.5 py-px text-center font-semibold" style={{ color: accent }}>
+              <th className="px-0.5 py-px text-left font-semibold">{label("day", lang)}</th>
+              <th className="px-0.5 py-px text-left font-semibold" style={{ color: accent }}>
                 {label("sehri", lang)}
               </th>
-              <th className="px-0.5 py-px text-center font-semibold" style={{ color: accent }}>
+              <th className="px-0.5 py-px text-left font-semibold" style={{ color: accent }}>
                 {label("iftar", lang)}
               </th>
-              <th className="px-0.5 py-px text-center font-semibold">{label("fajr", lang)}</th>
-              <th className="px-0.5 py-px text-center font-semibold">{label("maghrib", lang)}</th>
+              <th className="px-0.5 py-px text-left font-semibold">{label("fajr", lang)}</th>
+              <th className="px-0.5 py-px text-left font-semibold">{label("maghrib", lang)}</th>
             </tr>
           </thead>
           <tbody>
@@ -118,19 +118,19 @@ const MonthPanel = memo(function MonthPanel({
                   key={day.dateISO}
                   style={{ backgroundColor: i % 2 === 1 ? theme.muted : "transparent" }}
                 >
-                  <td className="whitespace-nowrap px-0.5 text-center">
+                  <td className="whitespace-nowrap px-0.5 text-left">
                     <span className="opacity-60">{weekdayName(day.dateISO, lang, "narrow")}</span>{" "}
                     {toNumerals(String(gregDay), numerals)}
                     <span className="opacity-50">/{toNumerals(String(hijriDay), numerals)}</span>
                   </td>
-                  <td className="px-0.5 text-center" style={{ color: accent }}>
+                  <td className="px-0.5 text-left" style={{ color: accent }}>
                     {fmt(day.fasting.sehri, tz)}
                   </td>
-                  <td className="px-0.5 text-center" style={{ color: accent }}>
+                  <td className="px-0.5 text-left" style={{ color: accent }}>
                     {fmt(day.fasting.iftar, tz)}
                   </td>
-                  <td className="px-0.5 text-center">{fmt(day.prayers.fajr, tz)}</td>
-                  <td className="px-0.5 text-center">{fmt(day.prayers.maghrib, tz)}</td>
+                  <td className="px-0.5 text-left">{fmt(day.prayers.fajr, tz)}</td>
+                  <td className="px-0.5 text-left">{fmt(day.prayers.maghrib, tz)}</td>
                 </tr>
               );
             })}
