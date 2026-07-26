@@ -1,9 +1,20 @@
 import { createContext, useContext } from "react";
 import type { StudioState } from "@/lib/state";
 
+/**
+ * A state update: either a plain patch merged over the current state, or a
+ * function of the *latest* state returning that patch. The functional form is
+ * what keeps concurrent nested edits correct — e.g. two debounced personalize
+ * fields whose timers fire back-to-back each read the freshest `personal`/`org`
+ * object instead of a stale render-time snapshot that would clobber the other.
+ */
+export type StatePatch =
+  | Partial<StudioState>
+  | ((prev: StudioState) => Partial<StudioState>);
+
 export type StudioContextValue = {
   state: StudioState;
-  updateState: (patch: Partial<StudioState>) => void;
+  updateState: (patch: StatePatch) => void;
   methodOverridden: boolean;
   setMethodOverridden: (v: boolean) => void;
   /**

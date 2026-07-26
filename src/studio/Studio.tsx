@@ -98,8 +98,11 @@ export function Studio() {
   // template change back to `monthly-ramadan`).
   const ramadanSuggestedForRef = useRef<string | null>(null);
 
-  const updateState = useCallback((patch: Partial<StudioState>) => {
-    setState((prev) => withValidTemplate({ ...prev, ...patch }));
+  const updateState = useCallback<StudioContextValue["updateState"]>((patch) => {
+    setState((prev) => {
+      const resolved = typeof patch === "function" ? patch(prev) : patch;
+      return withValidTemplate({ ...prev, ...resolved });
+    });
   }, []);
 
   // Persist to localStorage + reflect into the URL — but debounced. Continuous
@@ -317,9 +320,11 @@ export function Studio() {
             <FormatTabs />
             <DateControls hideHeader />
 
-            <div className="flex flex-1 flex-col overflow-y-auto">
-              <TemplateGallery />
-            </div>
+            {/* The whole column scrolls as one (the aside owns the scroll), so
+                the gallery gets its natural full height instead of being
+                squeezed into a short inner scroll region. */}
+            <SectionHeader title="Template" className="border-primary/70" />
+            <TemplateGallery />
           </aside>
 
           <main id="preview-region" className="relative flex min-h-0 flex-1 overflow-hidden bg-muted/30">

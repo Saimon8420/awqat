@@ -1,9 +1,9 @@
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUploadField } from "@/components/ui/image-upload";
 import { TEMPLATES } from "@/templates/registry";
 import type { StudioState } from "@/lib/state";
 import { useStudio } from "./context";
+import { DebouncedInput, DebouncedTextarea } from "./DebouncedText";
 
 /**
  * Whether the active template renders the Qibla compass (only the daily
@@ -13,6 +13,17 @@ import { useStudio } from "./context";
 export function templateShowsQibla(state: StudioState): boolean {
   return TEMPLATES.find((t) => t.id === state.template)?.showsQibla === true;
 }
+
+// Character caps per field, sized to what each slot can show without spilling
+// past the poster edge: headline-sized greeting/name stay short; the address,
+// tagline and dua get a bit more room (the dua wraps a couple of lines).
+const LIMIT = {
+  greeting: 48,
+  dua: 160,
+  name: 40,
+  address: 64,
+  tagline: 64,
+} as const;
 
 // Reuses Input's own styling (see src/components/ui/input.tsx) so a
 // multi-line dua/verse field looks consistent even though shadcn's Textarea
@@ -57,11 +68,12 @@ export function PersonalizeFields() {
           <Label htmlFor="org-name-input" className="text-xs font-normal text-muted-foreground">
             Name
           </Label>
-          <Input
+          <DebouncedInput
             id="org-name-input"
             value={org.name ?? ""}
             placeholder="Masjid / organization name"
-            onChange={(e) => updateState({ org: { ...state.org, name: e.target.value } })}
+            maxLength={LIMIT.name}
+            onCommit={(v) => updateState((prev) => ({ org: { ...prev.org, name: v } }))}
           />
         </div>
 
@@ -69,11 +81,12 @@ export function PersonalizeFields() {
           <Label htmlFor="org-address-input" className="text-xs font-normal text-muted-foreground">
             Address
           </Label>
-          <Input
+          <DebouncedInput
             id="org-address-input"
             value={org.address ?? ""}
             placeholder="Street, city"
-            onChange={(e) => updateState({ org: { ...state.org, address: e.target.value } })}
+            maxLength={LIMIT.address}
+            onCommit={(v) => updateState((prev) => ({ org: { ...prev.org, address: v } }))}
           />
         </div>
 
@@ -81,11 +94,12 @@ export function PersonalizeFields() {
           <Label htmlFor="org-tagline-input" className="text-xs font-normal text-muted-foreground">
             Tagline
           </Label>
-          <Input
+          <DebouncedInput
             id="org-tagline-input"
             value={org.tagline ?? ""}
             placeholder="e.g. Serving the community since 1990"
-            onChange={(e) => updateState({ org: { ...state.org, tagline: e.target.value } })}
+            maxLength={LIMIT.tagline}
+            onCommit={(v) => updateState((prev) => ({ org: { ...prev.org, tagline: v } }))}
           />
         </div>
       </section>
@@ -102,13 +116,12 @@ export function PersonalizeFields() {
           <Label htmlFor="personal-greeting-input" className="text-xs font-normal text-muted-foreground">
             Greeting
           </Label>
-          <Input
+          <DebouncedInput
             id="personal-greeting-input"
             value={personal.greeting ?? ""}
             placeholder="e.g. Ramadan Mubarak!"
-            onChange={(e) =>
-              updateState({ personal: { ...state.personal, greeting: e.target.value } })
-            }
+            maxLength={LIMIT.greeting}
+            onCommit={(v) => updateState((prev) => ({ personal: { ...prev.personal, greeting: v } }))}
           />
         </div>
 
@@ -116,13 +129,14 @@ export function PersonalizeFields() {
           <Label htmlFor="personal-dua-input" className="text-xs font-normal text-muted-foreground">
             Dua / verse
           </Label>
-          <textarea
+          <DebouncedTextarea
             id="personal-dua-input"
             value={personal.dua ?? ""}
             placeholder="A short dua or verse"
             rows={3}
+            maxLength={LIMIT.dua}
             className={TEXTAREA_CLASS}
-            onChange={(e) => updateState({ personal: { ...state.personal, dua: e.target.value } })}
+            onCommit={(v) => updateState((prev) => ({ personal: { ...prev.personal, dua: v } }))}
           />
         </div>
       </section>
