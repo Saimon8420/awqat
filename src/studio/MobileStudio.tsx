@@ -13,6 +13,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Brand } from "./Brand";
 import { LocationBar } from "./LocationBar";
+import { PrayerNowCard } from "./PrayerNowCard";
 import { FormatTabs } from "./FormatTabs";
 import { DateControls } from "./DateControls";
 import { TemplateGallery } from "./TemplateGallery";
@@ -87,6 +88,11 @@ export function MobileStudio({ children }: { children: ReactNode }) {
         </div>
 
         <FormatTabs />
+
+        {/* Live current/next-prayer status — the phone lost the floating
+            preview pill when it moved into the studio chrome, so it lives
+            here, one compact card above the canvas. */}
+        <PrayerNowCard />
       </header>
 
       {/* The hero: the canvas gets every pixel that isn't chrome. */}

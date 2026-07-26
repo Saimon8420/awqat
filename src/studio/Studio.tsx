@@ -23,6 +23,7 @@ import { Brand } from "./Brand";
 import { MobileStudio } from "./MobileStudio";
 import { DisclaimerText, ToolkitLinks } from "./SiteNotes";
 import { LocationBar } from "./LocationBar";
+import { PrayerNowCard } from "./PrayerNowCard";
 import { FormatTabs } from "./FormatTabs";
 import { DateControls } from "./DateControls";
 import { SectionHeader } from "./SectionHeader";
@@ -305,6 +306,10 @@ export function Studio() {
             <Brand />
 
             <LocationBar />
+
+            {/* Live "now" status for the chosen place + method: current and
+                next prayer, ticking. Sits at the foot of the Location group. */}
+            <PrayerNowCard />
 
             {/* Date group: the "Date" header, then the format tabs, then the
                 matching date selectors under them. */}

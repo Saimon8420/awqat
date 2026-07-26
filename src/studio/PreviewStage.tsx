@@ -5,7 +5,6 @@ import type { StudioState } from "@/lib/state";
 import { TEMPLATES } from "@/templates/registry";
 import { THEMES } from "@/templates/themes";
 import { useStudio } from "./context";
-import { LiveCountdown } from "./LiveCountdown";
 
 type PreviewStageProps = {
   monthly: MonthlyResponse | null;
@@ -73,7 +72,7 @@ export function PreviewStage({
   loading,
   error,
 }: PreviewStageProps) {
-  const { state, exporting } = useStudio();
+  const { state } = useStudio();
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
@@ -109,15 +108,6 @@ export function PreviewStage({
       ref={containerRef}
       className="relative flex h-full w-full items-center justify-center overflow-auto p-3 lg:p-8"
     >
-      {/* In-app-only live countdown chrome: intentionally rendered here,
-          outside #export-node, so it never appears in exported images (see
-          LiveCountdown's doc comment). `frozen` is threaded from the studio
-          context's `exporting` flag as a belt-and-suspenders seam for Task
-          16's export pipeline. */}
-      {state.format === "daily" && monthly && (
-        <LiveCountdown monthly={monthly} state={state} frozen={exporting} />
-      )}
-
       {loading && !monthly && (
         <p className="text-sm text-muted-foreground" role="status">
           Loading prayer times…
@@ -136,15 +126,19 @@ export function PreviewStage({
 
       {monthly && templateDef && (
         // Sizing box: exactly the *scaled* footprint. It carries the drop
-        // shadow and clips the child — #export-node keeps its full intrinsic
-        // width and is only visually shrunk by the transform, so its unscaled
-        // layout box would otherwise overflow this wrapper and leak a
-        // horizontal scrollbar into PreviewStage's scroll container. That
-        // overflow flips to the left under dir="rtl" (Arabic), which is why the
-        // stray scrollbar only showed there; clipping here fixes both
-        // directions. An element's own box-shadow isn't clipped by its own
-        // overflow-hidden, so the shadow survives the move off the node.
+        // shadow and clips the child, since #export-node keeps its full
+        // intrinsic width and is only visually shrunk by the transform — its
+        // unscaled layout box would otherwise leak a horizontal scrollbar into
+        // PreviewStage's scroll container. `dir="ltr"` pins this scaffold to
+        // LTR regardless of the app's language: under `dir="rtl"` (Arabic) RTL
+        // block flow right-aligns the oversized node, dragging its `top left`
+        // transform origin off to the left so the clipped box showed blank.
+        // Forcing LTR here keeps the node anchored top-left and fully visible;
+        // the template still renders RTL via its own `dir` on its root. (An
+        // element's own box-shadow isn't clipped by its own overflow-hidden,
+        // so the shadow survives the move off the node.)
         <div
+          dir="ltr"
           className="overflow-hidden shadow-xl"
           style={{ width: intrinsic.width * scale, height: intrinsic.height * scale }}
         >
