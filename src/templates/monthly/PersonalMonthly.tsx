@@ -113,10 +113,10 @@ export function PersonalMonthly({ monthly, state, theme }: TemplateProps) {
     >
       <DecorLayer state={state} theme={theme} accent={accent} />
       <header className="mb-4 flex items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-4xl font-bold">{state.city}</h1>
           {personal?.greeting && (
-            <p className="mt-1 text-xl font-medium" style={{ color: accent }}>
+            <p className="mt-1 break-words text-xl font-medium" style={{ color: accent }}>
               {personal.greeting}
             </p>
           )}
@@ -141,7 +141,7 @@ export function PersonalMonthly({ monthly, state, theme }: TemplateProps) {
       )}
 
       {personal?.dua && (
-        <p className="mt-3 text-center text-base italic opacity-80">{personal.dua}</p>
+        <p className="mt-3 break-words text-center text-base italic opacity-80">{personal.dua}</p>
       )}
 
       <MethodCaption method={monthly.method} madhab={monthly.madhab} lang={lang} className="mt-3" />

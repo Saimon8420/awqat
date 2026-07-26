@@ -19,7 +19,7 @@ export function templateShowsQibla(state: StudioState): boolean {
 // tagline and dua get a bit more room (the dua wraps a couple of lines).
 const LIMIT = {
   greeting: 48,
-  dua: 160,
+  dua: 120,
   name: 40,
   address: 64,
   tagline: 64,

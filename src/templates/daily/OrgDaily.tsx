@@ -81,10 +81,14 @@ export function OrgDaily({ monthly, qibla, state, theme }: TemplateProps) {
               {(org?.name ?? state.city).slice(0, 1).toUpperCase()}
             </div>
           )}
-          <h1 className="text-6xl font-bold leading-tight">{org?.name ?? state.city}</h1>
-          {org?.address && <p className="text-2xl opacity-75">{org.address}</p>}
+          <h1 className="max-w-full break-words text-6xl font-bold leading-tight">
+            {org?.name ?? state.city}
+          </h1>
+          {org?.address && (
+            <p className="max-w-full break-words text-2xl opacity-75">{org.address}</p>
+          )}
           {org?.tagline && (
-            <p className="text-2xl font-medium" style={{ color: accent }}>
+            <p className="max-w-full break-words text-2xl font-medium" style={{ color: accent }}>
               {org.tagline}
             </p>
           )}

@@ -42,13 +42,13 @@ export function YearPoster({ state, theme, months }: TemplateProps) {
     >
       <DecorLayer state={state} theme={theme} accent={accent} />
       <header className="mb-4 flex items-baseline justify-between">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold">
             {city} · {toNumerals(String(year), numerals)}
           </h1>
           {hijriSpan && <p className="text-sm opacity-70">{toNumerals(hijriSpan, numerals)}</p>}
           {personal?.greeting && (
-            <p className="mt-0.5 text-base font-medium" style={{ color: accent }}>
+            <p className="mt-0.5 break-words text-base font-medium" style={{ color: accent }}>
               {personal.greeting}
             </p>
           )}
@@ -79,7 +79,7 @@ export function YearPoster({ state, theme, months }: TemplateProps) {
       />
 
       {personal?.dua && (
-        <p className="mt-2 text-center text-sm italic opacity-80">{personal.dua}</p>
+        <p className="mt-2 break-words text-center text-sm italic opacity-80">{personal.dua}</p>
       )}
     </div>
   );

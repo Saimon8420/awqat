@@ -123,11 +123,13 @@ export function OrgMonthly({ monthly, state, theme }: TemplateProps) {
                 {(org?.name ?? state.city).slice(0, 1).toUpperCase()}
               </div>
             )}
-            <div>
-              <h1 className="text-3xl font-bold leading-tight">{org?.name ?? state.city}</h1>
-              {org?.address && <p className="text-base opacity-75">{org.address}</p>}
+            <div className="min-w-0">
+              <h1 className="break-words text-3xl font-bold leading-tight">
+                {org?.name ?? state.city}
+              </h1>
+              {org?.address && <p className="break-words text-base opacity-75">{org.address}</p>}
               {org?.tagline && (
-                <p className="text-base font-medium" style={{ color: accent }}>
+                <p className="break-words text-base font-medium" style={{ color: accent }}>
                   {org.tagline}
                 </p>
               )}

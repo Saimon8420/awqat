@@ -114,9 +114,13 @@ export function PersonalDaily({ monthly, qibla, state, theme }: TemplateProps) {
       )}
 
       {(personal?.greeting || personal?.dua) && (
-        <footer className="flex flex-col items-center gap-2 text-center">
-          {personal?.greeting && <p className="text-3xl font-medium">{personal.greeting}</p>}
-          {personal?.dua && <p className="text-2xl italic opacity-80">{personal.dua}</p>}
+        <footer className="flex w-full flex-col items-center gap-2 text-center">
+          {personal?.greeting && (
+            <p className="max-w-full break-words text-3xl font-medium">{personal.greeting}</p>
+          )}
+          {personal?.dua && (
+            <p className="max-w-full break-words text-2xl italic opacity-80">{personal.dua}</p>
+          )}
         </footer>
       )}
 

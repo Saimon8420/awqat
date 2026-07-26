@@ -140,13 +140,13 @@ export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateP
     >
       <DecorLayer state={state} theme={theme} accent={accent} />
       <header className="mb-4 flex items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-4xl font-bold" style={{ color: accent }}>
             {label("ramadan", lang)}
             {hijriYear !== undefined ? ` ${toNumerals(String(hijriYear), numerals)}` : ""}
           </h1>
           {personal?.greeting && (
-            <p className="mt-1 text-xl font-medium opacity-90">{personal.greeting}</p>
+            <p className="mt-1 break-words text-xl font-medium opacity-90">{personal.greeting}</p>
           )}
         </div>
         <p className="text-xl opacity-70">{state.city}</p>
@@ -167,7 +167,7 @@ export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateP
       )}
 
       {personal?.dua && (
-        <p className="mt-3 text-center text-base italic opacity-80">{personal.dua}</p>
+        <p className="mt-3 break-words text-center text-base italic opacity-80">{personal.dua}</p>
       )}
 
       <MethodCaption method={monthly.method} madhab={monthly.madhab} lang={lang} className="mt-3" />
