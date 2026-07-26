@@ -90,8 +90,9 @@ const SHEETS: Record<"a4" | "a3", readonly [number, number]> = {
  *
  * Two deliberate choices, both fixing user-reported problems:
  *  - **JPEG, not PNG.** A lossless PNG of a full-bleed poster ran ~24 MB;
- *    a quality-0.92 JPEG of the same card is a fraction of that with no
- *    visible loss, and text stays crisp because it's captured at 2x first.
+ *    a high-quality JPEG of the same card is a fraction of that, while
+ *    capturing at the same 3x density as the PNG (≈288 DPI once fitted to
+ *    A4/A3) keeps text sharp enough to stay crisp when zoomed in the PDF.
  *  - **The PDF page is shaped to the CONTENT, not to A4/A3.** The card's
  *    aspect (story 9:16, square, post 4:5, monthly landscape…) rarely matches
  *    paper, so the old fixed-A4 page letterboxed the image with white bands.
@@ -106,9 +107,10 @@ export async function exportPdf(
   opts: { size: "a4" | "a3"; orientation: "portrait" | "landscape"; filename: string },
 ): Promise<void> {
   await document.fonts.ready;
-  // Same transform-neutralizing / tight-crop capture as exportPng, as a JPEG
-  // (2x + q0.92 keeps it crisp while shrinking the file dramatically).
-  const dataUrl = await toJpeg(node, { ...captureOptions(node, 2), quality: 0.92 });
+  // Same transform-neutralizing / tight-crop capture as exportPng, as a JPEG:
+  // the 3x density (matching the PNG) keeps text sharp on zoom, and q0.95
+  // still shrinks the file dramatically versus a lossless PNG.
+  const dataUrl = await toJpeg(node, { ...captureOptions(node, EXPORT_PIXEL_RATIO), quality: 0.95 });
 
   const [short, long] = SHEETS[opts.size];
   const sheet =

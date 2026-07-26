@@ -98,7 +98,7 @@ const MonthPanel = memo(function MonthPanel({
         >
           <thead>
             <tr style={{ borderBottom: `1px solid ${accent}` }}>
-              <th className="px-0.5 py-px text-left font-semibold">{label("day", lang)}</th>
+              <th className="px-0.5 py-px text-center font-semibold">{label("day", lang)}</th>
               <th className="px-0.5 py-px text-center font-semibold" style={{ color: accent }}>
                 {label("sehri", lang)}
               </th>
@@ -118,7 +118,7 @@ const MonthPanel = memo(function MonthPanel({
                   key={day.dateISO}
                   style={{ backgroundColor: i % 2 === 1 ? theme.muted : "transparent" }}
                 >
-                  <td className="px-0.5 whitespace-nowrap">
+                  <td className="whitespace-nowrap px-0.5 text-center">
                     <span className="opacity-60">{weekdayName(day.dateISO, lang, "narrow")}</span>{" "}
                     {toNumerals(String(gregDay), numerals)}
                     <span className="opacity-50">/{toNumerals(String(hijriDay), numerals)}</span>
