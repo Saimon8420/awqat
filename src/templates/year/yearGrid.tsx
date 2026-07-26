@@ -4,7 +4,7 @@ import type { Lang } from "@/lib/i18n";
 import type { ThemeTokens } from "../themes";
 import { formatTime } from "@/lib/format";
 import { label, toNumerals } from "@/lib/i18n";
-import { dayLabel } from "@/lib/calendar";
+import { dayLabel, weekdayName } from "@/lib/calendar";
 
 /**
  * The shared 12-month grid used by both year posters — the personal
@@ -111,14 +111,18 @@ const MonthPanel = memo(function MonthPanel({
           </thead>
           <tbody>
             {monthly.days.map((day, i) => {
-              const { gregDay } = dayLabel(day);
+              const { gregDay, hijriDay } = dayLabel(day);
               const tz = monthly.location.timezone;
               return (
                 <tr
                   key={day.dateISO}
                   style={{ backgroundColor: i % 2 === 1 ? theme.muted : "transparent" }}
                 >
-                  <td className="px-0.5">{toNumerals(String(gregDay), numerals)}</td>
+                  <td className="px-0.5 whitespace-nowrap">
+                    <span className="opacity-60">{weekdayName(day.dateISO, lang, "narrow")}</span>{" "}
+                    {toNumerals(String(gregDay), numerals)}
+                    <span className="opacity-50">/{toNumerals(String(hijriDay), numerals)}</span>
+                  </td>
                   <td className="px-0.5 text-center" style={{ color: accent }}>
                     {fmt(day.fasting.sehri, tz)}
                   </td>

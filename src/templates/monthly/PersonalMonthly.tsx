@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { formatTime } from "@/lib/format";
 import { dir, label, toNumerals } from "@/lib/i18n";
-import { dayLabel } from "@/lib/calendar";
+import { dayLabel, weekdayName } from "@/lib/calendar";
 import { cn } from "@/lib/utils";
 import { DecorLayer } from "@/graphics/DecorLayer";
 import { MethodCaption } from "../MethodCaption";
@@ -82,6 +82,9 @@ export function PersonalMonthly({ monthly, state, theme }: TemplateProps) {
                 {toNumerals(String(gregDay), numerals)}
                 <span className="ml-1 text-xs opacity-60">
                   /{toNumerals(String(hijriDay), numerals)}
+                </span>
+                <span className="ms-1.5 text-xs font-normal opacity-55">
+                  {weekdayName(day.dateISO, lang)}
                 </span>
               </td>
               <td className={cn(pad, cellSize, "text-center font-semibold")} style={{ color: accent }}>

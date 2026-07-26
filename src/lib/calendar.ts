@@ -1,4 +1,5 @@
 import type { DayTimes, MonthlyResponse } from "./miqaat";
+import type { Lang } from "./i18n";
 
 export type SpecialType =
   | "ramadan"
@@ -70,4 +71,29 @@ export function dayLabel(d: DayTimes): { gregDay: number; hijriDay: number } {
     gregDay: Number(d.dateISO.slice(8, 10)),
     hijriDay: d.hijri.day,
   };
+}
+
+const WEEKDAY_LOCALE: Record<Lang, string> = { en: "en", bn: "bn", ar: "ar" };
+
+/**
+ * Localized weekday name for a day's ISO date, e.g. "Wed" / "বুধ" / "الأربعاء"
+ * (`short`) or "W" / "ব" / "أ" (`narrow`). The ISO date is parsed as a UTC
+ * calendar date so the weekday is fixed by the date itself and never shifts
+ * with the viewer's own timezone. Returned as a plain string — no numeral
+ * conversion needed (it's text, not digits).
+ *
+ * `short` is used on the roomy monthly tables; the ultra-dense year grid uses
+ * `narrow` (single glyph) so the tiny day cell can carry a weekday + hijri day
+ * without overflowing.
+ */
+export function weekdayName(
+  dateISO: string,
+  lang: Lang,
+  style: "short" | "long" | "narrow" = "short",
+): string {
+  const date = new Date(`${dateISO.slice(0, 10)}T00:00:00Z`);
+  return new Intl.DateTimeFormat(WEEKDAY_LOCALE[lang], {
+    weekday: style,
+    timeZone: "UTC",
+  }).format(date);
 }

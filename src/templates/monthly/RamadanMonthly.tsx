@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { formatTime } from "@/lib/format";
 import { dir, label, toNumerals } from "@/lib/i18n";
-import { dayLabel, type SpecialType } from "@/lib/calendar";
+import { dayLabel, weekdayName, type SpecialType } from "@/lib/calendar";
 import { cn } from "@/lib/utils";
 import { DecorLayer } from "@/graphics/DecorLayer";
 import { MethodCaption } from "../MethodCaption";
@@ -104,6 +104,9 @@ export function RamadanMonthly({ monthly, specialDays, state, theme }: TemplateP
                 {toNumerals(String(gregDay), numerals)}
                 <span className="ml-1 text-sm opacity-60">
                   /{toNumerals(String(hijriDay), numerals)}
+                </span>
+                <span className="ms-1.5 text-xs font-normal opacity-55">
+                  {weekdayName(day.dateISO, lang)}
                 </span>
                 {highlightType && (
                   <div className="text-xs font-semibold" style={{ color: accent }}>

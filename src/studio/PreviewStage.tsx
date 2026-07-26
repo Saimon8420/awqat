@@ -135,10 +135,22 @@ export function PreviewStage({
       )}
 
       {monthly && templateDef && (
-        <div style={{ width: intrinsic.width * scale, height: intrinsic.height * scale }}>
+        // Sizing box: exactly the *scaled* footprint. It carries the drop
+        // shadow and clips the child — #export-node keeps its full intrinsic
+        // width and is only visually shrunk by the transform, so its unscaled
+        // layout box would otherwise overflow this wrapper and leak a
+        // horizontal scrollbar into PreviewStage's scroll container. That
+        // overflow flips to the left under dir="rtl" (Arabic), which is why the
+        // stray scrollbar only showed there; clipping here fixes both
+        // directions. An element's own box-shadow isn't clipped by its own
+        // overflow-hidden, so the shadow survives the move off the node.
+        <div
+          className="overflow-hidden shadow-xl"
+          style={{ width: intrinsic.width * scale, height: intrinsic.height * scale }}
+        >
           <div
             id="export-node"
-            className="overflow-hidden shadow-xl"
+            className="overflow-hidden"
             style={{
               width: intrinsic.width,
               height: intrinsic.height,
