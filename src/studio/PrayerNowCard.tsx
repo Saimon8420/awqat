@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { ArrowRightIcon, MoonStarIcon, SunsetIcon } from "lucide-react";
+import { MoonStarIcon, SunsetIcon } from "lucide-react";
 import { getMonthly, type DayTimes } from "@/lib/miqaat";
-import { formatTime } from "@/lib/format";
 import { label, type LabelKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useStudio } from "./context";
@@ -46,9 +45,22 @@ function formatRemaining(ms: number): string {
 
 type Loaded = { today: DayTimes; tomorrow: DayTimes | undefined; tz: string };
 
-export function PrayerNowCard() {
+export type PrayerNow = {
+  current: { key: PrayerKey; iso?: string };
+  next: { key: PrayerKey; ms: number } | null;
+  fast: { key: Extract<LabelKey, "sehri" | "iftar">; ms: number } | null;
+  now: number;
+  tz: string;
+};
+
+/**
+ * The real "now" for the chosen place + method: the current prayer window,
+ * the next prayer, and the next fasting event, ticking every second. Always
+ * anchored to today, whatever date the poster shows.
+ */
+export function usePrayerNow(): PrayerNow | "loading" | null {
   const { state } = useStudio();
-  const { lat, lon, method, madhab, lang, numerals, hour12 } = state;
+  const { lat, lon, method, madhab } = state;
 
   const [now, setNow] = useState(() => Date.now());
   const [data, setData] = useState<Loaded | null>(null);
@@ -87,27 +99,17 @@ export function PrayerNowCard() {
   }, []);
 
   if (failed) return null;
-
-  if (!data) {
-    return (
-      <div className="rounded-lg border border-primary/20 bg-primary/[0.04] px-3 py-2.5 text-xs text-muted-foreground">
-        Loading prayer times…
-      </div>
-    );
-  }
+  if (!data) return "loading";
 
   const { today, tomorrow } = data;
-  const fmtClock = (iso: string) =>
-    formatTime(iso, { hour12, lang: numerals, timezone: data.tz });
-
   const events = PRAYER_ORDER.map((key) => ({ key, ms: new Date(today.prayers[key]).getTime(), iso: today.prayers[key] }));
   const nextIdx = events.findIndex((e) => e.ms > now);
 
   // Current window + upcoming prayer. Before Fajr the "current" window is last
   // night's Isha (whose time we don't carry, so its clock is left blank);
   // after Isha the next prayer rolls to tomorrow's Fajr.
-  let current: { key: PrayerKey; iso?: string };
-  let next: { key: PrayerKey; ms: number } | null;
+  let current: PrayerNow["current"];
+  let next: PrayerNow["next"];
   if (nextIdx === -1) {
     current = { key: "isha", iso: today.prayers.isha };
     next = tomorrow ? { key: "fajr", ms: new Date(tomorrow.prayers.fajr).getTime() } : null;
@@ -123,57 +125,61 @@ export function PrayerNowCard() {
   // tomorrow's Sehri (if the fetched month still has a tomorrow).
   const sehriMs = new Date(today.fasting.sehri).getTime();
   const iftarMs = new Date(today.fasting.iftar).getTime();
-  let fast: { key: Extract<LabelKey, "sehri" | "iftar">; ms: number } | null;
+  let fast: PrayerNow["fast"];
   if (now < sehriMs) fast = { key: "sehri", ms: sehriMs };
   else if (now < iftarMs) fast = { key: "iftar", ms: iftarMs };
   else fast = tomorrow ? { key: "sehri", ms: new Date(tomorrow.fasting.sehri).getTime() } : null;
-  const FastIcon = fast?.key === "iftar" ? SunsetIcon : MoonStarIcon;
 
-  return (
-    <div
-      className="rounded-lg border border-primary/25 bg-primary/[0.05] p-3"
-      role="status"
-      aria-live="off"
-    >
-      <div className="mb-2 flex items-center gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-foreground/70">
-        <span className="relative flex size-2" aria-hidden="true">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary/60" />
-          <span className="relative inline-flex size-2 rounded-full bg-primary" />
-        </span>
-        Prayer now
-      </div>
-
-      <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">Now</div>
-          <div className="truncate text-sm font-semibold">{label(current.key, lang)}</div>
-          <div className="text-xs tabular-nums text-muted-foreground">
-            {current.iso ? fmtClock(current.iso) : " "}
-          </div>
-        </div>
-
-        <ArrowRightIcon className="size-4 shrink-0 text-primary/60" aria-hidden="true" />
-
-        <div className="min-w-0 flex-1 text-right">
-          <div className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">Next</div>
-          <div className="truncate text-sm font-semibold text-primary">
-            {next ? label(next.key, lang) : "—"}
-          </div>
-          <div className="text-xs tabular-nums text-primary/80">
-            {next ? `in ${formatRemaining(next.ms - now)}` : " "}
-          </div>
-        </div>
-      </div>
-
-      {fast && (
-        <div className={cn("mt-2 flex items-center gap-1.5 border-t border-primary/15 pt-2 text-xs")}>
-          <FastIcon className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
-          <span className="text-muted-foreground">{label(fast.key, lang)} in</span>
-          <span className="tabular-nums font-medium">{formatRemaining(fast.ms - now)}</span>
-        </div>
-      )}
-    </div>
-  );
+  return { current, next, fast, now, tz: data.tz };
 }
 
-export default PrayerNowCard;
+/**
+ * The top bar's live status chip: "● Isha now · Fajr in 3h 19m", with the next
+ * Sehri/Iftar countdown in its tooltip. Lives outside `#export-node`, so it
+ * never appears in exported images.
+ */
+export function NowChip({ className }: { className?: string }) {
+  const { state } = useStudio();
+  const live = usePrayerNow();
+  if (live === null) return null;
+  if (live === "loading") {
+    return (
+      <span className={cn("inline-flex items-center rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground", className)}>
+        Loading times…
+      </span>
+    );
+  }
+  const { current, next, fast, now } = live;
+  const FastIcon = fast?.key === "iftar" ? SunsetIcon : MoonStarIcon;
+  return (
+    <span
+      role="status"
+      aria-live="off"
+      title={fast ? `${label(fast.key, state.lang)} in ${formatRemaining(fast.ms - now)}` : undefined}
+      className={cn(
+        "inline-flex min-w-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-primary",
+        className,
+      )}
+    >
+      <span className="relative flex size-2 shrink-0" aria-hidden="true">
+        <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary/60" />
+        <span className="relative inline-flex size-2 rounded-full bg-primary" />
+      </span>
+      <span className="truncate">
+        {label(current.key, state.lang)} now
+        {next && (
+          <>
+            {" · "}
+            {label(next.key, state.lang)} in <span className="tabular-nums">{formatRemaining(next.ms - now)}</span>
+          </>
+        )}
+      </span>
+      {fast && (
+        <span className="hidden items-center gap-1 border-l border-border pl-2 font-medium text-muted-foreground xl:inline-flex">
+          <FastIcon className="size-3.5 text-primary" aria-hidden="true" />
+          {label(fast.key, state.lang)} {formatRemaining(fast.ms - now)}
+        </span>
+      )}
+    </span>
+  );
+}

@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Countdowns, MonthlyResponse, QiblaData } from "@/lib/miqaat";
 import type { SpecialType } from "@/lib/calendar";
 import type { StudioState } from "@/lib/state";
-import { TEMPLATES } from "@/templates/registry";
-import { THEMES } from "@/templates/themes";
+import { componentFor } from "@/templates/registry";
+import { resolveTheme } from "@/templates/themes";
 import { useStudio } from "./context";
 
 type PreviewStageProps = {
@@ -32,7 +32,7 @@ const DAILY_RATIO_SIZE: Record<
   post: { width: 1080, height: 1350 },
 };
 
-function intrinsicSizeFor(state: StudioState): { width: number; height: number } {
+export function intrinsicSizeFor(state: StudioState): { width: number; height: number } {
   if (state.format === "daily") return DAILY_RATIO_SIZE[state.exportRatio ?? "story"];
   if (state.format === "monthly") {
     // Monthly follows the Orientation toggle live: a portrait poster or a
@@ -72,9 +72,11 @@ export function PreviewStage({
   loading,
   error,
 }: PreviewStageProps) {
-  const { state } = useStudio();
+  const { state, zoom } = useStudio();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
+  const [fit, setFit] = useState(1);
+  // Zoom multiplies the fit-to-screen scale; past 1 the stage scrolls.
+  const scale = fit * zoom;
 
   const intrinsic = intrinsicSizeFor(state);
 
@@ -87,7 +89,7 @@ export function PreviewStage({
       const availW = el.clientWidth - pad.x;
       const availH = el.clientHeight - pad.y;
       const next = Math.min(availW / intrinsic.width, availH / intrinsic.height, 1);
-      setScale(next > 0 ? next : 1);
+      setFit(next > 0 ? next : 1);
     };
 
     compute();
@@ -100,13 +102,17 @@ export function PreviewStage({
     return () => ro.disconnect();
   }, [intrinsic.width, intrinsic.height]);
 
-  const templateDef = TEMPLATES.find((t) => t.id === state.template);
-  const theme = THEMES.find((t) => t.id === state.theme) ?? THEMES[0];
+  const Template = componentFor(state.template, state.format);
+  const theme = resolveTheme(state.template, state.theme);
 
   return (
     <div
       ref={containerRef}
-      className="relative flex h-full w-full items-center justify-center overflow-auto p-3 lg:p-8"
+      className={
+        zoom > 1
+          ? "relative flex h-full w-full overflow-auto p-3 lg:p-8"
+          : "relative flex h-full w-full items-center justify-center overflow-auto p-3 lg:p-8"
+      }
     >
       {loading && !monthly && (
         <p className="text-sm text-muted-foreground" role="status">
@@ -124,7 +130,7 @@ export function PreviewStage({
         <p className="text-sm text-muted-foreground">No data yet.</p>
       )}
 
-      {monthly && templateDef && (
+      {monthly && (
         // Sizing box: exactly the *scaled* footprint. It carries the drop
         // shadow and clips the child, since #export-node keeps its full
         // intrinsic width and is only visually shrunk by the transform — its
@@ -139,7 +145,7 @@ export function PreviewStage({
         // so the shadow survives the move off the node.)
         <div
           dir="ltr"
-          className="overflow-hidden shadow-xl"
+          className="m-auto shrink-0 overflow-hidden shadow-[0_24px_60px_-24px_rgba(20,30,25,0.55)]"
           style={{ width: intrinsic.width * scale, height: intrinsic.height * scale }}
         >
           <div
@@ -152,7 +158,7 @@ export function PreviewStage({
               transformOrigin: "top left",
             }}
           >
-            <templateDef.Component
+            <Template
               monthly={monthly}
               qibla={qibla ?? undefined}
               countdowns={countdowns ?? undefined}
@@ -163,10 +169,6 @@ export function PreviewStage({
             />
           </div>
         </div>
-      )}
-
-      {monthly && !templateDef && (
-        <p className="text-sm text-muted-foreground">No template selected for this format yet.</p>
       )}
     </div>
   );

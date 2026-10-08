@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 import { exportPdf, exportPng, exportYearZip } from "@/lib/export";
 import { getMonthly } from "@/lib/miqaat";
 import { specialDaysForMonth } from "@/lib/calendar";
-import { TEMPLATES, templatesFor } from "@/templates/registry";
-import { THEMES } from "@/templates/themes";
+import { componentFor } from "@/templates/registry";
+import { resolveTheme } from "@/templates/themes";
 import type { StudioState } from "@/lib/state";
 import { useStudio } from "./context";
 
@@ -60,16 +60,12 @@ const ALL_MONTHS_NODE_SIZE = {
 } as const;
 
 /**
- * Bottom bar of the Studio: lets the user pick an export aspect ratio for
- * the `daily` format (Story/Square/Post — see `PreviewStage`'s
- * `DAILY_RATIO_SIZE`), a PDF page size/orientation, and triggers PNG/PDF
- * captures of `#export-node` plus a "Download all 12 months" zip.
- *
- * The ratio toggle is disabled for `monthly`/`year`, which always use their
- * own fixed canvas size (portrait poster / A3 landscape respectively).
+ * Every download the studio offers: PNG and PDF captures of `#export-node`,
+ * plus "all 12 months" as a ZIP. Shared by the top bar's quick PDF button and
+ * the full Download menu so both export exactly the same way.
  */
-export function ExportBar({ variant = "bar" }: { variant?: "bar" | "sheet" } = {}) {
-  const { state, updateState, setExporting } = useStudio();
+export function useExporter() {
+  const { state, setExporting } = useStudio();
   const [downloading, setDownloading] = useState(false);
   const [pdfDownloading, setPdfDownloading] = useState(false);
   const [zipDownloading, setZipDownloading] = useState(false);
@@ -155,25 +151,9 @@ export function ExportBar({ variant = "bar" }: { variant?: "bar" | "sheet" } = {
     setZipDownloading(true);
     setExporting(true);
 
-    const monthlyTemplates = templatesFor("monthly");
-    const currentTemplateDef = TEMPLATES.find((t) => t.id === state.template);
-    // While viewing `monthly`, reuse the exact template the user has
-    // selected; while viewing `year` (which has no per-month template of
-    // its own), fall back to the first monthly template sharing the current
-    // template's lane (personal/organization), or failing that, any
-    // monthly template.
-    const templateDef =
-      (state.format === "monthly" ? currentTemplateDef : undefined) ??
-      monthlyTemplates.find((t) => t.lane === currentTemplateDef?.lane) ??
-      monthlyTemplates[0];
-    const theme = THEMES.find((t) => t.id === state.theme) ?? THEMES[0];
-
-    if (!templateDef) {
-      setError("No monthly template available to render.");
-      setExporting(false);
-      setZipDownloading(false);
-      return;
-    }
+    // The same design renders the monthly pages, whatever format is open.
+    const MonthlyTemplate = componentFor(state.template, "monthly");
+    const theme = resolveTheme(state.template, state.theme);
 
     // `display:none` would collapse the container to 0x0 and break
     // html-to-image's capture, so it's pushed off-screen with
@@ -207,10 +187,10 @@ export function ExportBar({ variant = "bar" }: { variant?: "bar" | "sheet" } = {
 
         await new Promise<void>((resolve) => {
           root.render(
-            <templateDef.Component
+            <MonthlyTemplate
               monthly={monthly}
               specialDays={specialDaysForMonth(monthly.days)}
-              state={state}
+              state={{ ...state, format: "monthly" }}
               theme={theme}
             />,
           );
@@ -235,6 +215,48 @@ export function ExportBar({ variant = "bar" }: { variant?: "bar" | "sheet" } = {
       setZipDownloading(false);
     }
   }
+
+  return {
+    busy,
+    downloading,
+    pdfDownloading,
+    zipDownloading,
+    error,
+    pdfSize,
+    setPdfSize: (value: "a4" | "a3") => setPdfSizeOverride((prev) => ({ ...prev, [state.format]: value })),
+    orientation,
+    showRatio,
+    showOrientation,
+    showAllMonthsButton,
+    handleDownload,
+    handleDownloadPdf,
+    handleDownloadAllMonths,
+  };
+}
+
+/**
+ * The Download menu: format options (aspect ratio for daily, orientation for
+ * monthly, PDF paper size) above the PNG / PDF / all-months buttons. Lives in
+ * the desktop top-bar popover and the phone's Download sheet.
+ */
+export function ExportBar({ variant = "sheet" }: { variant?: "bar" | "sheet" } = {}) {
+  const { state, updateState } = useStudio();
+  const {
+    busy,
+    downloading,
+    pdfDownloading,
+    zipDownloading,
+    error,
+    pdfSize,
+    setPdfSize,
+    orientation,
+    showRatio,
+    showOrientation,
+    showAllMonthsButton,
+    handleDownload,
+    handleDownloadPdf,
+    handleDownloadAllMonths,
+  } = useExporter();
 
   const sheet = variant === "sheet";
 
@@ -273,7 +295,7 @@ export function ExportBar({ variant = "bar" }: { variant?: "bar" | "sheet" } = {
           aria-label="PDF size"
           options={PDF_SIZES}
           value={pdfSize}
-          onChange={(value) => setPdfSizeOverride((prev) => ({ ...prev, [state.format]: value }))}
+          onChange={setPdfSize}
         />
       </div>
     </>

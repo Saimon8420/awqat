@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
 import type { StudioState } from "@/lib/state";
+import type { MonthlyResponse } from "@/lib/miqaat";
 
 /**
  * A state update: either a plain patch merged over the current state, or a
@@ -18,13 +19,15 @@ export type StudioContextValue = {
   methodOverridden: boolean;
   setMethodOverridden: (v: boolean) => void;
   /**
-   * Marks that the user has explicitly picked a template this session (via
-   * TemplateGallery), as opposed to a template being set automatically
-   * (format-fallback, or the Ramadan auto-suggest in Studio). Call this
-   * alongside `updateState({ template })` from any *manual* template pick
-   * so the Ramadan auto-suggest knows not to override the user's choice.
+   * Marks that the user has flipped the Ramadan switch themselves this
+   * session, so Studio's Ramadan auto-suggest never overrides that choice.
    */
-  setTemplateTouched: (v: boolean) => void;
+  setRamadanTouched: (v: boolean) => void;
+  /** Preview zoom on top of fit-to-screen (1 = fit). App chrome only, never persisted. */
+  zoom: number;
+  setZoom: (v: number) => void;
+  /** The month the preview is showing, so design thumbnails can render real times. */
+  monthly: MonthlyResponse | null;
   /**
    * True while the export pipeline (Task 16) is capturing `#export-node`
    * (e.g. via html-to-image). Defaults to false. Consumers that render

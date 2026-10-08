@@ -1,17 +1,16 @@
 import { Label } from "@/components/ui/label";
 import { ImageUploadField } from "@/components/ui/image-upload";
-import { TEMPLATES } from "@/templates/registry";
 import type { StudioState } from "@/lib/state";
 import { useStudio } from "./context";
 import { DebouncedInput, DebouncedTextarea } from "./DebouncedText";
 
 /**
- * Whether the active template renders the Qibla compass (only the daily
- * cards). Used by CustomizePanel to hide the "Show Qibla" toggle on
- * monthly/year, where it would be a dead control.
+ * Whether the current card renders the Qibla compass (only the daily cards
+ * have room for it). Used to hide the "Show Qibla" toggle on monthly/year,
+ * where it would be a dead control.
  */
 export function templateShowsQibla(state: StudioState): boolean {
-  return TEMPLATES.find((t) => t.id === state.template)?.showsQibla === true;
+  return state.format === "daily";
 }
 
 // Character caps per field, sized to what each slot can show without spilling
@@ -32,18 +31,14 @@ const TEXTAREA_CLASS =
   "min-h-16 w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30";
 
 /**
- * Lane-aware personalization section, mounted inside `CustomizePanel`.
- * Resolves the active template's lane (`TEMPLATES.find(t => t.id ===
- * state.template)?.lane`) and renders either organization branding fields
- * (logo/name/address/tagline, bound to `state.org.*`) or personal fields
- * (greeting/dua, bound to `state.personal.*`). Renders nothing if the
- * template can't be resolved (defensive; `withValidTemplate` in Studio keeps
- * `state.template` valid for the current format in practice).
+ * Personalization fields for the Text panel. With Masjid mode on it's the
+ * organization's branding (logo/name/address/tagline, bound to `state.org.*`);
+ * otherwise a personal greeting and dua (bound to `state.personal.*`).
  */
 export function PersonalizeFields() {
   const { state, updateState } = useStudio();
 
-  const lane = TEMPLATES.find((t) => t.id === state.template)?.lane;
+  const lane = state.masjid ? "organization" : "personal";
 
   if (lane === "organization") {
     const org = state.org ?? {};
