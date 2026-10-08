@@ -3,7 +3,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Studio } from "../src/studio/Studio";
 import { getCountdowns, getMethods, getMonthly, getQibla } from "../src/lib/miqaat";
 import { searchCity, defaultMethod } from "../src/lib/geo";
-import { templatesFor } from "../src/templates/registry";
 
 vi.mock("../src/lib/miqaat", () => ({
   getMonthly: vi.fn(),
@@ -69,9 +68,15 @@ beforeEach(() => {
   ]);
 });
 
+/** The location search lives in the Place panel of the icon rail. */
+function openPlace() {
+  fireEvent.click(screen.getByRole("button", { name: "Place" }));
+}
+
 describe("Studio", () => {
   it("renders the location search input and the three format tabs", () => {
     render(<Studio />);
+    openPlace();
     expect(screen.getByLabelText("Location")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Daily" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Monthly" })).toBeInTheDocument();
@@ -110,8 +115,8 @@ describe("Studio", () => {
 
     render(<Studio />);
     const main = screen.getByRole("main");
-    const locationInput = screen.getByLabelText("Location");
-    fireEvent.focus(locationInput);
+    openPlace();
+    fireEvent.focus(screen.getByLabelText("Location"));
 
     // Selecting the first city (no override yet) derives the method from the
     // city's country via defaultMethod().
@@ -121,9 +126,8 @@ describe("Studio", () => {
     fireEvent.click(screen.getByText("Bangladesh").closest("button")!);
     await waitFor(() => expect(main).toHaveTextContent(/"method":\s*"Karachi"/));
 
-    // Manually override the method via the customize panel's calculation
-    // select (it used to live behind an "Advanced" popover on the location
-    // field; it's now a plain always-visible control).
+    // Manually override the method in the Times panel.
+    fireEvent.click(screen.getByRole("button", { name: "Times" }));
     await waitFor(() => expect(screen.getByLabelText("Calculation method")).toBeInTheDocument());
     fireEvent.click(screen.getByLabelText("Calculation method"));
     await waitFor(() => expect(screen.getByText("Egyptian")).toBeInTheDocument());
@@ -138,8 +142,9 @@ describe("Studio", () => {
 
     // Selecting a different city no longer resets the method: it stays the
     // overridden value even though defaultMethod("Egypt") would say
-    // "MuslimWorldLeague". Focusing the input re-opens the already-fetched list.
-    fireEvent.focus(locationInput);
+    // "MuslimWorldLeague". Back in the Place panel, focusing the input opens the list.
+    openPlace();
+    fireEvent.focus(screen.getByLabelText("Location"));
     await waitFor(() => expect(screen.getByText("Egypt")).toBeInTheDocument(), { timeout: 2000 });
     fireEvent.click(screen.getByText("Egypt").closest("button")!);
     await waitFor(() => expect(main).toHaveTextContent(/"city":\s*"Cairo"/));
@@ -154,6 +159,7 @@ describe("Studio", () => {
       { name: "Cairo", lat: 30.04, lon: 31.24, country: "Egypt" },
     ]);
     render(<Studio />);
+    openPlace();
     const locationInput = screen.getByLabelText("Location");
     fireEvent.change(locationInput, { target: { value: "Cairo" } });
     expect((locationInput as HTMLInputElement).value).toBe("Cairo");
@@ -161,19 +167,28 @@ describe("Studio", () => {
     await waitFor(() => expect(screen.getByText("Cairo")).toBeInTheDocument());
   });
 
-  it("falls back to a valid template id when the format changes", async () => {
+  it("keeps the design when the format changes", async () => {
     render(<Studio />);
-    const monthlyIds = templatesFor("monthly").map((t) => t.id);
-
-    expect(screen.getByTestId("current-template")).not.toHaveTextContent(
-      new RegExp(`^(${monthlyIds.join("|")})$`),
-    );
-
+    expect(screen.getByTestId("current-template")).toHaveTextContent("mihrab");
     fireEvent.click(screen.getByRole("tab", { name: "Monthly" }));
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Monthly" })).toHaveAttribute("aria-selected", "true"));
+    expect(screen.getByTestId("current-template")).toHaveTextContent("mihrab");
+  });
 
-    await waitFor(() => {
-      expect(monthlyIds).toContain(screen.getByTestId("current-template").textContent);
-    });
+  it("switches design from the design strip", async () => {
+    render(<Studio />);
+    // Pick Parchment's first colour by its accessible title.
+    const parchment = screen.getAllByRole("option").find((el) => el.getAttribute("title")?.startsWith("Parchment & Ink"));
+    fireEvent.click(parchment!);
+    await waitFor(() => expect(screen.getByTestId("current-template")).toHaveTextContent("parchment"));
+  });
+
+  it("opens an old shared link in the matching design with Masjid mode on", () => {
+    window.history.replaceState(null, "", "/?template=monthly-masjid&format=monthly");
+    render(<Studio />);
+    expect(screen.getByTestId("current-template")).toHaveTextContent("mihrab");
+    fireEvent.click(screen.getByRole("button", { name: "Designs" }));
+    expect(screen.getByRole("switch", { name: /Masjid mode/ })).toBeChecked();
   });
 
   it("persists state to localStorage and the URL on state changes", async () => {
@@ -200,14 +215,15 @@ describe("Studio", () => {
     }
   });
 
-  it("auto-suggests the Ramadan template when a Ramadan-dominant month loads and the template hasn't been touched", async () => {
+  it("turns Ramadan mode on when a Ramadan-dominant month loads and the switch hasn't been touched", async () => {
     vi.mocked(getMonthly).mockResolvedValue(ramadanMonthly);
     render(<Studio />);
+    expect(screen.getByTestId("ramadan-mode")).toHaveTextContent("false");
 
     fireEvent.click(screen.getByRole("tab", { name: "Monthly" }));
 
     await waitFor(() => {
-      expect(screen.getByTestId("current-template")).toHaveTextContent("monthly-ramadan");
+      expect(screen.getByTestId("ramadan-mode")).toHaveTextContent("true");
     });
   });
 
@@ -250,11 +266,12 @@ describe("Studio", () => {
     render(<Studio />);
     await waitFor(() => expect(getMonthly).toHaveBeenCalled());
 
-    // The Month select only shows for the monthly/year formats; the daily
-    // format uses a calendar date picker instead. Switch to Monthly first,
-    // let its own format-change refetch settle, then clear the mock so the
+    // The Month select only shows for the monthly/year formats (daily uses a
+    // calendar), inside the top bar's Date chip. Switch to Monthly first, let
+    // its own format-change refetch settle, then clear the mock so the
     // assertion below sees only the month-change refetch.
     fireEvent.click(screen.getByRole("tab", { name: "Monthly" }));
+    fireEvent.click(screen.getByRole("button", { name: "Date" }));
     await waitFor(() => expect(screen.getByLabelText("Month")).toBeInTheDocument());
     vi.mocked(getMonthly).mockClear();
 
@@ -273,25 +290,21 @@ describe("Studio", () => {
     });
   });
 
-  it("does not auto-suggest the Ramadan template once the user has manually picked a template", async () => {
+  it("does not auto-suggest Ramadan mode once the user has flipped the switch", async () => {
     vi.mocked(getMonthly).mockResolvedValue(ramadanMonthly);
     render(<Studio />);
 
-    // Manually pick the (already-selected) Daily Classic template via the
-    // gallery — this marks templateTouched even before switching format.
-    await waitFor(() => expect(screen.getByText("Daily Classic")).toBeInTheDocument());
-    fireEvent.click(screen.getByText("Daily Classic").closest("button")!);
+    // Flip Ramadan mode on and back off by hand in the Designs panel.
+    fireEvent.click(screen.getByRole("button", { name: "Designs" }));
+    const ramadanSwitch = screen.getByRole("switch", { name: /Ramadan mode/ });
+    fireEvent.click(ramadanSwitch);
+    await waitFor(() => expect(screen.getByTestId("ramadan-mode")).toHaveTextContent("true"));
+    fireEvent.click(ramadanSwitch);
+    await waitFor(() => expect(screen.getByTestId("ramadan-mode")).toHaveTextContent("false"));
 
     fireEvent.click(screen.getByRole("tab", { name: "Monthly" }));
-
-    await waitFor(() => {
-      const monthlyIds = templatesFor("monthly").map((t) => t.id);
-      expect(monthlyIds).toContain(screen.getByTestId("current-template").textContent);
-    });
-
-    // Give the auto-suggest effect a chance to (incorrectly) fire; it must
-    // not override the format-fallback template with monthly-ramadan.
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(screen.getByTestId("current-template")).not.toHaveTextContent("monthly-ramadan");
+    // Give the auto-suggest effect a chance to (incorrectly) fire.
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(screen.getByTestId("ramadan-mode")).toHaveTextContent("false");
   });
 });

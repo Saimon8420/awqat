@@ -45,9 +45,12 @@ function renderWithStudio(ui: React.ReactElement, state: StudioState) {
     updateState: vi.fn(),
     methodOverridden: false,
     setMethodOverridden: vi.fn(),
-    setTemplateTouched: vi.fn(),
+    setRamadanTouched: vi.fn(),
     exporting: false,
     setExporting: vi.fn(),
+    zoom: 1,
+    setZoom: vi.fn(),
+    monthly: null,
   };
   return render(<StudioContext.Provider value={ctxValue}>{ui}</StudioContext.Provider>);
 }
@@ -88,8 +91,8 @@ describe("LiveCountdown", () => {
 });
 
 describe("PersonalizeFields", () => {
-  it("shows organization fields (logo/name/address/tagline) for an org-lane template", () => {
-    renderWithStudio(<PersonalizeFields />, { ...dailyState, template: "daily-org" });
+  it("shows organization fields (logo/name/address/tagline) when Masjid mode is on", () => {
+    renderWithStudio(<PersonalizeFields />, { ...dailyState, masjid: true });
     expect(screen.getByLabelText("Logo")).toBeInTheDocument();
     expect(screen.getByLabelText("Name")).toBeInTheDocument();
     expect(screen.getByLabelText("Address")).toBeInTheDocument();
@@ -97,8 +100,8 @@ describe("PersonalizeFields", () => {
     expect(screen.queryByLabelText("Greeting")).not.toBeInTheDocument();
   });
 
-  it("shows personal fields (greeting/dua) for a personal-lane template", () => {
-    renderWithStudio(<PersonalizeFields />, { ...dailyState, template: "daily-classic" });
+  it("shows personal fields (greeting/dua) when Masjid mode is off", () => {
+    renderWithStudio(<PersonalizeFields />, { ...dailyState, masjid: false });
     expect(screen.getByLabelText("Greeting")).toBeInTheDocument();
     expect(screen.getByLabelText("Dua / verse")).toBeInTheDocument();
     expect(screen.queryByLabelText("Name")).not.toBeInTheDocument();

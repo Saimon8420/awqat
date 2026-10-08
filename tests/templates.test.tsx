@@ -1,12 +1,25 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, within } from "@testing-library/react";
-import { PersonalDaily } from "../src/templates/daily/PersonalDaily";
-import { DEFAULT_STATE } from "../src/lib/state";
-import { THEMES } from "../src/templates/themes";
-import type { MonthlyResponse } from "../src/lib/miqaat";
-import type { TemplateProps } from "../src/templates/registry";
+import { render, screen } from "@testing-library/react";
+import { DEFAULT_STATE, type StudioState } from "../src/lib/state";
+import { resolveTheme, type DesignId } from "../src/templates/themes";
+import { componentFor, type TemplateProps } from "../src/templates/registry";
+import { MihrabDaily } from "../src/templates/designs/mihrab";
+import type { DayTimes, MonthlyResponse } from "../src/lib/miqaat";
+import type { Lang } from "../src/lib/i18n";
 
-const theme = THEMES[0]; // emerald, accent "#0f9d63"
+const mkDay = (dateISO: string, hijriDay: number, monthName: string): DayTimes => ({
+  dateISO,
+  hijri: { day: hijriDay, monthName, year: 1447 },
+  prayers: {
+    fajr: `${dateISO}T04:00:00.000Z`,
+    sunrise: `${dateISO}T05:30:00.000Z`,
+    dhuhr: `${dateISO}T12:00:00.000Z`,
+    asr: `${dateISO}T15:30:00.000Z`,
+    maghrib: `${dateISO}T18:00:00.000Z`,
+    isha: `${dateISO}T19:30:00.000Z`,
+  },
+  fasting: { sehri: `${dateISO}T03:45:00.000Z`, iftar: `${dateISO}T18:00:00.000Z` },
+});
 
 const mockMonthly: MonthlyResponse = {
   location: { lat: 23.81, lon: 90.41, timezone: "Asia/Dhaka" },
@@ -14,79 +27,135 @@ const mockMonthly: MonthlyResponse = {
   madhab: "shafi",
   year: 2026,
   month: 7,
-  days: [
-    {
-      dateISO: "2026-07-09",
-      hijri: { day: 24, monthName: "Muharram", year: 1448 },
-      prayers: {
-        fajr: "2026-07-09T04:00:00.000Z",
-        sunrise: "2026-07-09T05:30:00.000Z",
-        dhuhr: "2026-07-09T12:00:00.000Z",
-        asr: "2026-07-09T15:30:00.000Z",
-        maghrib: "2026-07-09T18:00:00.000Z",
-        isha: "2026-07-09T19:30:00.000Z",
-      },
-      fasting: { sehri: "2026-07-09T03:45:00.000Z", iftar: "2026-07-09T18:00:00.000Z" },
-    },
-  ],
+  days: [mkDay("2026-07-09", 24, "Muharram"), mkDay("2026-07-10", 25, "Muharram")],
 };
 
-function makeProps(overrides: Partial<TemplateProps["state"]> = {}): TemplateProps {
+const ramadanMonthly: MonthlyResponse = {
+  ...mockMonthly,
+  month: 3,
+  days: [mkDay("2026-03-10", 21, "Ramadan"), mkDay("2026-03-11", 22, "Ramadan")],
+};
+
+function props(overrides: Partial<StudioState> = {}, monthly = mockMonthly): TemplateProps {
+  const state: StudioState = {
+    ...DEFAULT_STATE,
+    city: "Dhaka",
+    year: 2026,
+    month: monthly.month,
+    day: Number(monthly.days[0].dateISO.slice(8, 10)),
+    ...overrides,
+  };
   return {
-    monthly: mockMonthly,
+    monthly,
     specialDays: {},
-    theme,
-    state: {
-      ...DEFAULT_STATE,
-      city: "Dhaka",
-      year: 2026,
-      month: 7,
-      day: 9,
-      ...overrides,
-    },
+    theme: resolveTheme(state.template, state.theme),
+    state,
+    months: Array.from({ length: 12 }, () => monthly),
   };
 }
 
-/** The Sehri time <p> lives in the same wrapper div as the "Sehri" label <p>. */
+/** The Sehri time sits right after its "Sehri ends" label. */
 function sehriTimeEl(): HTMLElement {
-  const sehriLabel = screen.getByText("Sehri");
-  return within(sehriLabel.parentElement as HTMLElement).getByText(/[0-9০-৯]/);
+  return screen.getByText("Sehri ends").nextElementSibling as HTMLElement;
 }
 
-describe("template accent + numerals", () => {
+describe("every design renders every format in every language", () => {
+  const designs: DesignId[] = ["mihrab", "parchment", "daylight"];
+  const formats = ["daily", "monthly", "year"] as const;
+  const langs: Lang[] = ["en", "bn", "ar"];
+  for (const design of designs) {
+    for (const format of formats) {
+      for (const lang of langs) {
+        it(`${design} · ${format} · ${lang}`, () => {
+          const Template = componentFor(design, format);
+          const { container } = render(<Template {...props({ template: design, format, lang, numerals: lang })} />);
+          const root = container.firstElementChild as HTMLElement;
+          expect(root.getAttribute("dir")).toBe(lang === "ar" ? "rtl" : "ltr");
+          // Every export states how its times were calculated.
+          expect(container.textContent).toContain("Method: MuslimWorldLeague · shafi");
+        });
+      }
+    }
+  }
+});
+
+describe("daily card details", () => {
   it("keeps English labels but renders Bengali digits when numerals is 'bn' and lang stays 'en'", () => {
-    const props = makeProps({ lang: "en", numerals: "bn" });
-    render(<PersonalDaily {...props} />);
-
-    // Label stays English (driven by state.lang).
-    expect(screen.getByText("Sehri")).toBeInTheDocument();
-
-    // The Sehri time renders using Bengali digits (driven by
-    // state.numerals, independent of state.lang).
-    const sehriTime = sehriTimeEl();
-    expect(sehriTime.textContent).toMatch(/^[০-৯:]+\s?(AM|PM)$/);
-    // No Western digits should have leaked into the formatted time.
-    expect(sehriTime.textContent).not.toMatch(/[0-9]/);
+    render(<MihrabDaily {...props({ lang: "en", numerals: "bn" })} />);
+    const time = sehriTimeEl().textContent ?? "";
+    expect(time).toMatch(/[০-৯]/);
+    expect(time).not.toMatch(/[0-9]/);
   });
 
-  it("renders Western digits by default (lang and numerals both 'en'), unchanged from before the fix", () => {
-    const props = makeProps({ lang: "en", numerals: "en" });
-    render(<PersonalDaily {...props} />);
-    expect(screen.getByText("Sehri")).toBeInTheDocument();
-    const sehriTime = sehriTimeEl();
-    expect(sehriTime.textContent).toMatch(/^\d{1,2}:\d{2}\s?(AM|PM)$/);
+  it("renders Western digits by default", () => {
+    render(<MihrabDaily {...props()} />);
+    expect(sehriTimeEl().textContent).toMatch(/^\d{1,2}:\d{2}/);
   });
 
-  it("uses the user's custom accent hex for the Sehri time color when state.accent is set", () => {
-    const customAccent = "#e11d48";
-    const props = makeProps({ accent: customAccent });
-    render(<PersonalDaily {...props} />);
-    expect(sehriTimeEl()).toHaveStyle({ color: customAccent });
+  it("tints the Sehri label with a custom accent, or the design's gold by default", () => {
+    const { unmount } = render(<MihrabDaily {...props({ accent: "#e11d48" })} />);
+    expect(screen.getByText("Sehri ends")).toHaveStyle({ color: "#e11d48" });
+    unmount();
+    render(<MihrabDaily {...props({ accent: "" })} />);
+    expect(screen.getByText("Sehri ends")).toHaveStyle({ color: "#e8c977" });
   });
 
-  it("falls back to the theme's accent color when state.accent is empty", () => {
-    const props = makeProps({ accent: "" });
-    render(<PersonalDaily {...props} />);
-    expect(sehriTimeEl()).toHaveStyle({ color: theme.accent });
+  it("shows Arabic prayer names alongside English unless switched off", () => {
+    const { unmount } = render(<MihrabDaily {...props()} />);
+    expect(screen.getByText("الفجر")).toBeInTheDocument();
+    unmount();
+    render(<MihrabDaily {...props({ showArabic: false })} />);
+    expect(screen.queryByText("الفجر")).not.toBeInTheDocument();
+  });
+
+  it("hides Sehri & Iftar when switched off — but Ramadan mode always shows them", () => {
+    const { unmount } = render(<MihrabDaily {...props({ showFasting: false })} />);
+    expect(screen.queryByText("Sehri ends")).not.toBeInTheDocument();
+    unmount();
+    render(<MihrabDaily {...props({ showFasting: false, ramadan: true })} />);
+    expect(screen.getByText("Sehri ends")).toBeInTheDocument();
+  });
+
+  it("brands the card in Masjid mode", () => {
+    for (const design of ["mihrab", "parchment", "daylight"] as const) {
+      const Template = componentFor(design, "daily");
+      const { unmount } = render(
+        <Template
+          {...props({
+            template: design,
+            masjid: true,
+            org: { name: "Baitul Mukarram", address: "Paltan, Dhaka", tagline: "National Mosque" },
+          })}
+        />,
+      );
+      expect(screen.getAllByText(/Baitul Mukarram/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Paltan, Dhaka/).length).toBeGreaterThan(0);
+      expect(screen.getByText("National Mosque")).toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it("shows the personal greeting and dua when Masjid mode is off", () => {
+    render(<MihrabDaily {...props({ personal: { greeting: "Jumu'ah Mubarak", dua: "Rabbi zidni ilma" } })} />);
+    expect(screen.getByText("Jumu'ah Mubarak")).toBeInTheDocument();
+    expect(screen.getByText("Rabbi zidni ilma")).toBeInTheDocument();
+  });
+});
+
+describe("monthly Ramadan mode", () => {
+  it("leads with Sehri and Iftar and titles the page Ramadan", () => {
+    const Monthly = componentFor("parchment", "monthly");
+    render(<Monthly {...props({ template: "parchment", format: "monthly", ramadan: true }, ramadanMonthly)} />);
+    expect(screen.getByText("Ramadan 1447")).toBeInTheDocument();
+    const heads = screen.getAllByRole("columnheader").map((th) => th.textContent);
+    expect(heads.slice(0, 4)).toEqual(["Date", "Hijri", "Sehri", "Iftar"]);
+  });
+
+  it("puts Sehri before the prayers and Iftar after them outside Ramadan mode", () => {
+    const Monthly = componentFor("daylight", "monthly");
+    render(<Monthly {...props({ template: "daylight", format: "monthly" })} />);
+    const heads = screen.getAllByRole("columnheader").map((th) => th.textContent);
+    expect(heads[2]).toBe("Sehri");
+    expect(heads[heads.length - 1]).toBe("Iftar");
   });
 });

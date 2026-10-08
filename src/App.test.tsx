@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import App from "./App";
 
 vi.mock("@/lib/miqaat", () => ({
@@ -36,6 +36,9 @@ describe("App", () => {
   it("renders the Awqat studio shell", () => {
     render(<App />);
     expect(screen.getByRole("heading", { name: "Awqat" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Place: Dhaka" })).toBeInTheDocument();
+    // The location search lives in the Place panel.
+    fireEvent.click(screen.getByRole("button", { name: "Place" }));
     expect(screen.getByLabelText("Location")).toBeInTheDocument();
   });
 });

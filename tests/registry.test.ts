@@ -1,14 +1,36 @@
 import { describe, it, expect } from "vitest";
-import { templatesFor } from "../src/templates/registry";
+import { DESIGNS, componentFor, designById } from "../src/templates/registry";
+import { THEMES, resolveTheme, themesFor } from "../src/templates/themes";
 
-describe("template registry", () => {
-  it("returns only templates for the requested format", () => {
-    const daily = templatesFor("daily");
-    expect(daily.length).toBeGreaterThan(0);
-    expect(daily.every((t) => t.format === "daily")).toBe(true);
+describe("design registry", () => {
+  it("has the three designs, each rendering every format", () => {
+    expect(DESIGNS.map((d) => d.id)).toEqual(["mihrab", "parchment", "daylight"]);
+    for (const d of DESIGNS) {
+      for (const format of ["daily", "monthly", "year"] as const) {
+        expect(typeof componentFor(d.id, format)).toBe("function");
+      }
+    }
   });
-  it("filters by lane when given", () => {
-    const orgMonthly = templatesFor("monthly", "organization");
-    expect(orgMonthly.every((t) => t.lane === "organization")).toBe(true);
+
+  it("falls back to Mihrab Night for an unknown design id", () => {
+    expect(designById("nope").id).toBe("mihrab");
+  });
+
+  it("gives every design its own colours, Mihrab defaulting to Navy & Gold", () => {
+    expect(themesFor("mihrab").map((t) => t.name)).toEqual([
+      "Navy & Gold",
+      "Emerald & Gold",
+      "Maroon & Gold",
+      "Black & Gold",
+    ]);
+    expect(themesFor("parchment")).toHaveLength(3);
+    expect(themesFor("daylight")).toHaveLength(3);
+    expect(THEMES).toHaveLength(10);
+  });
+
+  it("resolves a colour only within its design", () => {
+    expect(resolveTheme("parchment", "parchment-forest").id).toBe("parchment-forest");
+    // A Mihrab colour isn't valid for Daylight, so Daylight's default is used.
+    expect(resolveTheme("daylight", "mihrab-navy").id).toBe("daylight-emerald");
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { encodeState, decodeState, saveLocal, loadLocal, DEFAULT_STATE } from "../src/lib/state";
+import { encodeState, decodeState, saveLocal, loadLocal, migrateState, DEFAULT_STATE, type StudioState } from "../src/lib/state";
 
 beforeEach(() => localStorage.clear());
 
@@ -43,5 +43,43 @@ describe("state", () => {
     expect(decoded.bgDim).toBe(20);
     expect(decoded.bgBlur).toBe(8);
     expect(decoded.radius).toBe(24);
+  });
+
+  it("defaults to Mihrab Night in Navy & Gold with every 'show on card' switch on", () => {
+    expect(DEFAULT_STATE.template).toBe("mihrab");
+    expect(DEFAULT_STATE.theme).toBe("mihrab-navy");
+    expect(DEFAULT_STATE.masjid).toBe(false);
+    expect(DEFAULT_STATE.ramadan).toBe(false);
+    expect(DEFAULT_STATE.showFasting && DEFAULT_STATE.showArabic && DEFAULT_STATE.showNext).toBe(true);
+  });
+
+  it("round-trips the design, colour and mode switches through the URL", () => {
+    const s: StudioState = { ...DEFAULT_STATE, template: "parchment", theme: "parchment-forest", masjid: true, ramadan: true, showArabic: false };
+    const decoded = decodeState(encodeState(s));
+    expect(decoded.template).toBe("parchment");
+    expect(decoded.theme).toBe("parchment-forest");
+    expect(decoded.masjid).toBe(true);
+    expect(decoded.ramadan).toBe(true);
+    expect(decoded.showArabic).toBe(false);
+  });
+
+  it("opens old shared links in the matching new design and mode", () => {
+    const from = (template: string, theme = "emerald") =>
+      migrateState({ ...DEFAULT_STATE, ...decodeState(`template=${template}&theme=${theme}`) } as StudioState);
+    expect(from("daily-classic")).toMatchObject({ template: "mihrab", masjid: false, ramadan: false });
+    expect(from("monthly-masjid")).toMatchObject({ template: "mihrab", masjid: true });
+    expect(from("year-org")).toMatchObject({ template: "mihrab", masjid: true });
+    expect(from("monthly-ramadan")).toMatchObject({ template: "mihrab", ramadan: true });
+    // The old shared theme ids aren't colours of the new designs → design default.
+    expect(from("daily-classic", "gold-navy").theme).toBe("mihrab-navy");
+  });
+
+  it("fills switches that older saved settings never had", () => {
+    const old = { ...DEFAULT_STATE } as Partial<StudioState>;
+    delete old.showFasting;
+    delete old.masjid;
+    const migrated = migrateState(old as StudioState);
+    expect(migrated.showFasting).toBe(true);
+    expect(migrated.masjid).toBe(false);
   });
 });
