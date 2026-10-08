@@ -38,7 +38,18 @@ export function hijriYearSpan(months: MonthlyResponse[]): string | null {
   return min === max ? `${min} AH` : `${min}–${max} AH`;
 }
 
+/** Per-design dressing for the month panels. */
+export type YearLook = {
+  panelBg?: string;
+  panelBorder?: string;
+  headColor?: string;
+  headFont?: string;
+  bodyFont?: string;
+  radius?: number;
+};
+
 type MonthPanelProps = {
+  look?: YearLook;
   monthIndex: number;
   monthly: MonthlyResponse | undefined;
   lang: Lang;
@@ -68,12 +79,16 @@ const MonthPanel = memo(function MonthPanel({
   hour12,
   theme,
   accent,
+  look,
 }: MonthPanelProps) {
   const name = monthName(monthIndex, lang);
 
   const panelStyle: CSSProperties = {
-    borderColor: `${theme.fg}22`,
+    borderColor: look?.panelBorder ?? `${theme.fg}22`,
     borderWidth: 1,
+    background: look?.panelBg,
+    borderRadius: look?.radius,
+    fontFamily: look?.bodyFont,
   };
 
   const fmt = (iso: string, timezone: string) =>
@@ -82,7 +97,12 @@ const MonthPanel = memo(function MonthPanel({
   return (
     <div className="flex flex-col overflow-hidden rounded border p-1" style={panelStyle}>
       <div className="mb-0.5 flex items-baseline justify-between">
-        <span className="text-[11px] font-semibold">{name}</span>
+        <span
+          className="text-[13px] font-semibold"
+          style={{ color: look?.headColor, fontFamily: look?.headFont }}
+        >
+          {name}
+        </span>
       </div>
 
       {!monthly ? (
@@ -142,6 +162,7 @@ const MonthPanel = memo(function MonthPanel({
 });
 
 type YearGridProps = {
+  look?: YearLook;
   months: MonthlyResponse[] | undefined;
   lang: Lang;
   numerals: Lang;
@@ -162,6 +183,7 @@ export const YearGrid = memo(function YearGrid({
   hour12,
   theme,
   accent,
+  look,
 }: YearGridProps) {
   if (!months) {
     return (
@@ -182,6 +204,7 @@ export const YearGrid = memo(function YearGrid({
           hour12={hour12}
           theme={theme}
           accent={accent}
+          look={look}
         />
       ))}
     </div>

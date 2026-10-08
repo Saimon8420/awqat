@@ -2,14 +2,10 @@ import type React from "react";
 import type { Countdowns, MonthlyResponse, QiblaData } from "@/lib/miqaat";
 import type { SpecialType } from "@/lib/calendar";
 import type { StudioState } from "@/lib/state";
-import type { ThemeTokens } from "./themes";
-import { PersonalDaily } from "./daily/PersonalDaily";
-import { OrgDaily } from "./daily/OrgDaily";
-import { PersonalMonthly } from "./monthly/PersonalMonthly";
-import { OrgMonthly } from "./monthly/OrgMonthly";
-import { RamadanMonthly } from "./monthly/RamadanMonthly";
-import { YearPoster } from "./year/YearPoster";
-import { OrgYearPoster } from "./year/OrgYearPoster";
+import type { DesignId, ThemeTokens } from "./themes";
+import { MihrabDaily, MihrabMonthly, MihrabYear } from "./designs/mihrab";
+import { ParchmentDaily, ParchmentMonthly, ParchmentYear } from "./designs/parchment";
+import { DaylightDaily, DaylightMonthly, DaylightYear } from "./designs/daylight";
 
 export type TemplateProps = {
   monthly: MonthlyResponse;
@@ -21,87 +17,51 @@ export type TemplateProps = {
   /**
    * All 12 months (Jan..Dec, index 0..11) of `state.year`, fetched only for
    * the "year" format (see Studio's year-fetch effect). `undefined` while
-   * unfetched/not applicable; only `year-overview`-format templates use it.
-   * Existing daily/monthly templates ignore it.
+   * unfetched/not applicable; only the year posters use it.
    */
   months?: MonthlyResponse[];
 };
 
-export type TemplateDef = {
-  id: string;
+export type Format = StudioState["format"];
+
+export type DesignDef = {
+  id: DesignId;
   name: string;
-  lane: "personal" | "organization";
-  format: "daily" | "monthly" | "year";
-  Component: React.FC<TemplateProps>;
-  thumbnail?: string;
-  /**
-   * Whether this template renders the Qibla compass (`state.showQibla`). Only
-   * the daily cards have room for it; the monthly/year layouts don't, so the
-   * "Show Qibla" toggle is hidden for them rather than offering a dead control.
-   * See CustomizePanel.
-   */
-  showsQibla?: boolean;
+  /** One line on what the design is best for, shown in the Designs panel. */
+  blurb: string;
+  components: Record<Format, React.FC<TemplateProps>>;
 };
 
-export const TEMPLATES: TemplateDef[] = [
+/**
+ * The three card designs. Each renders every format, so switching between
+ * Daily / Monthly / Year keeps the look; Masjid and Ramadan are switches on
+ * top of any design rather than separate templates.
+ */
+export const DESIGNS: DesignDef[] = [
   {
-    id: "daily-classic",
-    name: "Daily Classic",
-    lane: "personal",
-    format: "daily",
-    Component: PersonalDaily,
-    showsQibla: true,
+    id: "mihrab",
+    name: "Mihrab Night",
+    blurb: "Night-blue and gold inside a mihrab arch. Made for sharing.",
+    components: { daily: MihrabDaily, monthly: MihrabMonthly, year: MihrabYear },
   },
   {
-    id: "daily-org",
-    name: "Daily Masjid Schedule",
-    lane: "organization",
-    format: "daily",
-    Component: OrgDaily,
-    showsQibla: true,
+    id: "parchment",
+    name: "Parchment & Ink",
+    blurb: "A printed almanac on warm paper. Made for printing.",
+    components: { daily: ParchmentDaily, monthly: ParchmentMonthly, year: ParchmentYear },
   },
   {
-    id: "monthly-classic",
-    name: "Monthly Classic",
-    lane: "personal",
-    format: "monthly",
-    Component: PersonalMonthly,
-  },
-  {
-    id: "monthly-masjid",
-    name: "Monthly Masjid Schedule",
-    lane: "organization",
-    format: "monthly",
-    Component: OrgMonthly,
-  },
-  {
-    id: "monthly-ramadan",
-    name: "Ramadan",
-    lane: "personal",
-    format: "monthly",
-    Component: RamadanMonthly,
-  },
-  {
-    id: "year-overview",
-    name: "Year Overview",
-    lane: "personal",
-    format: "year",
-    Component: YearPoster,
-  },
-  {
-    id: "year-org",
-    name: "Year Masjid Schedule",
-    lane: "organization",
-    format: "year",
-    Component: OrgYearPoster,
+    id: "daylight",
+    name: "Daylight",
+    blurb: "The next prayer as the hero, under a daytime sky. Made for phones.",
+    components: { daily: DaylightDaily, monthly: DaylightMonthly, year: DaylightYear },
   },
 ];
 
-export function templatesFor(
-  format: TemplateDef["format"],
-  lane?: TemplateDef["lane"],
-): TemplateDef[] {
-  return TEMPLATES.filter(
-    (t) => t.format === format && (lane === undefined || t.lane === lane),
-  );
+export function designById(id: string): DesignDef {
+  return DESIGNS.find((d) => d.id === id) ?? DESIGNS[0];
+}
+
+export function componentFor(design: string, format: Format): React.FC<TemplateProps> {
+  return designById(design).components[format];
 }
