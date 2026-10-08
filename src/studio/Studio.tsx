@@ -4,10 +4,10 @@ import {
   decodeState,
   encodeState,
   loadLocal,
+  migrateState,
   saveLocal,
   type StudioState,
 } from "@/lib/state";
-import { templatesFor } from "@/templates/registry";
 import {
   getCountdowns,
   getMonthly,
@@ -19,32 +19,17 @@ import {
 import { isRamadanMonth, specialDaysForMonth, type SpecialType } from "@/lib/calendar";
 import { dir } from "@/lib/i18n";
 import { useIsMobile } from "@/lib/use-media-query";
-import { Brand } from "./Brand";
 import { MobileStudio } from "./MobileStudio";
-import { DisclaimerText, ToolkitLinks } from "./SiteNotes";
-import { LocationBar } from "./LocationBar";
-import { PrayerNowCard } from "./PrayerNowCard";
-import { FormatTabs } from "./FormatTabs";
-import { DateControls } from "./DateControls";
-import { SectionHeader } from "./SectionHeader";
+import { DesktopStudio } from "./DesktopStudio";
 import { PreviewStage } from "./PreviewStage";
-import { TemplateGallery } from "./TemplateGallery";
-import { CustomizePanel } from "./CustomizePanel";
-import { ExportBar } from "./ExportBar";
 import { StudioContext, type StudioContextValue } from "./context";
-
-/** Ensures `template` is a valid id for `format`, falling back to the first template for that format. */
-function withValidTemplate(s: StudioState): StudioState {
-  const options = templatesFor(s.format);
-  if (options.some((t) => t.id === s.template)) return s;
-  return options.length > 0 ? { ...s, template: options[0].id } : s;
-}
 
 function computeInitialState(): StudioState {
   const fromLocal = loadLocal();
   const fromUrl = decodeState(window.location.search);
   const merged: StudioState = { ...DEFAULT_STATE, ...(fromLocal ?? {}), ...fromUrl };
-  return withValidTemplate(merged);
+  // Maps pre-redesign template ids and keeps the colour valid for the design.
+  return migrateState(merged);
 }
 
 type FetchState = {
@@ -82,10 +67,10 @@ export function Studio() {
   const [state, setState] = useState<StudioState>(() => computeInitialState());
   const [methodOverridden, setMethodOverridden] = useState(false);
   const [fetchState, setFetchState] = useState<FetchState>(INITIAL_FETCH_STATE);
-  // Whether the user has explicitly picked a template this session (see
-  // StudioContextValue.setTemplateTouched / TemplateGallery). Gates the
+  // Whether the user has flipped the Ramadan switch this session. Gates the
   // Ramadan auto-suggest below so it never overrides a manual choice.
-  const [templateTouched, setTemplateTouched] = useState(false);
+  const [ramadanTouched, setRamadanTouched] = useState(false);
+  const [zoom, setZoom] = useState(1);
   // Export-capture flag (see StudioContextValue.exporting): Task 16's export
   // pipeline flips this true around the html-to-image capture of
   // #export-node so any moment-in-time UI (currently LiveCountdown) can
@@ -94,14 +79,13 @@ export function Studio() {
   const [exporting, setExporting] = useState(false);
   // Dedup key ("year-month") for the last month the Ramadan auto-suggest
   // fired for, so it runs at most once per fetched month rather than on
-  // every re-render (which would otherwise fight a subsequent manual
-  // template change back to `monthly-ramadan`).
+  // every re-render.
   const ramadanSuggestedForRef = useRef<string | null>(null);
 
   const updateState = useCallback<StudioContextValue["updateState"]>((patch) => {
     setState((prev) => {
       const resolved = typeof patch === "function" ? patch(prev) : patch;
-      return withValidTemplate({ ...prev, ...resolved });
+      return migrateState({ ...prev, ...resolved });
     });
   }, []);
 
@@ -125,13 +109,10 @@ export function Studio() {
     };
   }, [state]);
 
-  // Defensive guard: `updateState` and `FormatTabs.changeFormat` already keep
-  // `template` valid for the current `format` on every path that changes
-  // either value, but this re-validates on every format change in case some
-  // future code path ever sets `format` directly without going through them.
+  // A new format starts at fit-to-screen.
   useEffect(() => {
-    setState((prev) => withValidTemplate(prev));
-  }, [state.format]);
+    setZoom(1);
+  }, [state.format, state.exportRatio, state.orientation]);
 
   useEffect(() => {
     let cancelled = false;
@@ -220,31 +201,23 @@ export function Studio() {
     };
   }, [state.lat, state.lon, state.year, state.method, state.madhab, state.format]);
 
-  // Auto-suggest the Ramadan template: once per fetched month, if the month
-  // is Ramadan-dominant and the user hasn't manually picked a template this
-  // session, default to `monthly-ramadan` — but only while viewing the
-  // monthly format (switching format doesn't discard the suggestion; it
-  // just doesn't apply while looking at daily/year). Gated by
-  // `ramadanSuggestedForRef` so this fires at most once per month-load: the
-  // `setState` call below changes `state.template`, which is itself a
-  // dependency of this effect, but the ref check short-circuits the re-run
-  // instead of looping.
+  // Auto-suggest Ramadan mode: once per fetched month, if the month is
+  // Ramadan-dominant and the user hasn't flipped the switch themselves, turn
+  // it on — but only while viewing the monthly format. Gated by
+  // `ramadanSuggestedForRef` so it fires at most once per month-load.
   useEffect(() => {
     const monthly = fetchState.monthly;
     if (!monthly) return;
     if (state.format !== "monthly") return;
-    if (templateTouched) return;
+    if (ramadanTouched) return;
 
     const monthKey = `${monthly.year}-${monthly.month}`;
     if (ramadanSuggestedForRef.current === monthKey) return;
-
     if (!isRamadanMonth(monthly.days)) return;
 
     ramadanSuggestedForRef.current = monthKey;
-    if (state.template !== "monthly-ramadan") {
-      setState((prev) => withValidTemplate({ ...prev, template: "monthly-ramadan" }));
-    }
-  }, [fetchState.monthly, state.format, state.template, templateTouched]);
+    setState((prev) => (prev.ramadan ? prev : { ...prev, ramadan: true }));
+  }, [fetchState.monthly, state.format, ramadanTouched]);
 
   const ctxValue: StudioContextValue = useMemo(
     () => ({
@@ -252,11 +225,14 @@ export function Studio() {
       updateState,
       methodOverridden,
       setMethodOverridden,
-      setTemplateTouched,
+      setRamadanTouched,
       exporting,
       setExporting,
+      zoom,
+      setZoom,
+      monthly: fetchState.monthly,
     }),
-    [state, updateState, methodOverridden, exporting],
+    [state, updateState, methodOverridden, exporting, zoom, fetchState.monthly],
   );
 
   // The preview is built once and handed to whichever shell is active, so
@@ -271,6 +247,9 @@ export function Studio() {
           present regardless of fetch state. */}
       <span className="sr-only" data-testid="current-template">
         {state.template}
+      </span>
+      <span className="sr-only" data-testid="ramadan-mode">
+        {String(state.ramadan)}
       </span>
       <pre className="sr-only">
         {JSON.stringify({
@@ -303,46 +282,7 @@ export function Studio() {
 
   return (
     <StudioContext.Provider value={ctxValue}>
-      <div className="flex h-svh flex-col overflow-x-hidden bg-background text-foreground">
-        <div className="flex flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
-          <aside className="relative flex w-full shrink-0 flex-col gap-4 overflow-y-auto border-b border-border bg-sidebar p-4 lg:w-80 lg:border-b-0 lg:border-r">
-            <Brand />
-
-            <LocationBar />
-
-            {/* Live "now" status for the chosen place + method: current and
-                next prayer, ticking. Sits at the foot of the Location group. */}
-            <PrayerNowCard />
-
-            {/* Date group: the "Date" header, then the format tabs, then the
-                matching date selectors under them. */}
-            <SectionHeader title="Date" className="border-primary/70" />
-            <FormatTabs />
-            <DateControls hideHeader />
-
-            {/* The whole column scrolls as one (the aside owns the scroll), so
-                the gallery gets its natural full height instead of being
-                squeezed into a short inner scroll region. */}
-            <SectionHeader title="Template" className="border-primary/70" />
-            <TemplateGallery />
-          </aside>
-
-          <main id="preview-region" className="relative flex min-h-0 flex-1 overflow-hidden bg-muted/30">
-            {preview}
-          </main>
-
-          <aside className="relative w-full shrink-0 overflow-y-auto border-t border-border px-4 pb-4 lg:w-72 lg:border-t-0 lg:border-l">
-            <CustomizePanel />
-          </aside>
-        </div>
-
-        <ExportBar />
-
-        <div className="flex shrink-0 flex-col gap-1.5 border-t border-border bg-muted/20 px-4 py-2.5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-          <DisclaimerText className="max-w-prose" />
-          <ToolkitLinks className="shrink-0" />
-        </div>
-      </div>
+      <DesktopStudio>{preview}</DesktopStudio>
     </StudioContext.Provider>
   );
 }
