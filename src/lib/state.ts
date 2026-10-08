@@ -1,4 +1,6 @@
 import type { Lang } from "./i18n";
+import type { DesignId } from "@/templates/themes";
+import { resolveTheme } from "@/templates/themes";
 
 export type StudioState = {
   lat: number;
@@ -12,7 +14,16 @@ export type StudioState = {
   /** 1-31. Used by daily-format templates to pick a specific day within `month`. */
   day: number;
   format: "daily" | "monthly" | "year";
-  template: string;
+  /** The card design (see `DESIGNS` in templates/registry). Same design across all three formats. */
+  template: DesignId;
+  /** Masjid mode: the card carries the organization's logo / name / address. */
+  masjid: boolean;
+  /** Ramadan mode: Sehri & Iftar lead, and Ramadan's special nights are highlighted. */
+  ramadan: boolean;
+  /** "Show on card" toggles. */
+  showFasting: boolean;
+  showArabic: boolean;
+  showNext: boolean;
   lang: Lang;
   hour12: boolean;
   numerals: Lang;
@@ -58,11 +69,16 @@ export const DEFAULT_STATE: StudioState = {
   month: new Date().getMonth() + 1,
   day: new Date().getDate(),
   format: "daily",
-  template: "daily-classic",
+  template: "mihrab",
+  masjid: false,
+  ramadan: false,
+  showFasting: true,
+  showArabic: true,
+  showNext: true,
   lang: "en",
   hour12: true,
   numerals: "en",
-  theme: "emerald",
+  theme: "mihrab-navy",
   accent: "",
   showRows: {
     fajr: true,
@@ -92,6 +108,11 @@ const SCALAR_KEYS = [
   "day",
   "format",
   "template",
+  "masjid",
+  "ramadan",
+  "showFasting",
+  "showArabic",
+  "showNext",
   "lang",
   "hour12",
   "numerals",
@@ -108,7 +129,15 @@ const SCALAR_KEYS = [
 ] as const;
 
 const NUMBER_KEYS = new Set(["lat", "lon", "year", "month", "day", "bgDim", "bgBlur", "radius"]);
-const BOOLEAN_KEYS = new Set(["hour12", "showQibla"]);
+const BOOLEAN_KEYS = new Set([
+  "hour12",
+  "showQibla",
+  "masjid",
+  "ramadan",
+  "showFasting",
+  "showArabic",
+  "showNext",
+]);
 const FORMAT_VALUES = new Set(["daily", "monthly", "year"]);
 const LANG_VALUES = new Set(["en", "bn", "ar"]);
 const ORIENTATION_VALUES = new Set(["portrait", "landscape"]);
@@ -151,6 +180,44 @@ export function decodeState(query: string): Partial<StudioState> {
   }
 
   return result as Partial<StudioState>;
+}
+
+const DESIGN_IDS = new Set<string>(["mihrab", "parchment", "daylight"]);
+
+/**
+ * Before the redesign each format had its own templates ("daily-classic",
+ * "monthly-masjid", "monthly-ramadan"…) and the colour themes were shared.
+ * Links and saved settings from then still carry those ids, so they're mapped
+ * onto the new model: the matching design plus the Masjid / Ramadan switch.
+ */
+const LEGACY_TEMPLATES: Record<string, Partial<StudioState>> = {
+  "daily-classic": { template: "mihrab" },
+  "monthly-classic": { template: "mihrab" },
+  "year-overview": { template: "mihrab" },
+  "daily-org": { template: "mihrab", masjid: true },
+  "monthly-masjid": { template: "mihrab", masjid: true },
+  "year-org": { template: "mihrab", masjid: true },
+  "monthly-ramadan": { template: "mihrab", ramadan: true },
+};
+
+/** Normalizes a merged state: maps legacy template ids and keeps `theme` valid for the design. */
+export function migrateState(s: StudioState): StudioState {
+  let next = s;
+  const raw = s.template as string;
+  if (!DESIGN_IDS.has(raw)) {
+    next = { ...next, template: "mihrab", ...(LEGACY_TEMPLATES[raw] ?? {}) };
+  }
+  // Fill switches that older saved states never had.
+  next = {
+    ...next,
+    masjid: next.masjid ?? false,
+    ramadan: next.ramadan ?? false,
+    showFasting: next.showFasting ?? true,
+    showArabic: next.showArabic ?? true,
+    showNext: next.showNext ?? true,
+  };
+  const theme = resolveTheme(next.template, next.theme).id;
+  return theme === next.theme ? next : { ...next, theme };
 }
 
 export function saveLocal(s: StudioState): void {

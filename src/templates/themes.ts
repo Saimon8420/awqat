@@ -1,142 +1,156 @@
+/** The three card designs. Every design renders every format (daily / monthly / year). */
+export type DesignId = "mihrab" | "parchment" | "daylight";
+
+/**
+ * One colour variation of a design. The flat `bg/fg/accent/muted` tokens are
+ * what shared pieces (DecorLayer's photo scrim and glow, the year grid) read;
+ * `sky` is the design's own three-stop backdrop (night sky for Mihrab, paper
+ * tones for Parchment, the daylight sky for Daylight).
+ */
 export type ThemeTokens = {
   id: string;
   name: string;
+  design: DesignId;
+  /** Main surface colour. */
   bg: string;
+  /** Text colour on `bg`. */
   fg: string;
+  /** The design's signature colour (gold, terracotta, emerald…). */
   accent: string;
+  /** A soft tint for stripes and secondary text. */
   muted: string;
+  /** Backdrop stops: [top/highlight, middle, bottom/deep]. */
+  sky: [string, string, string];
   fontDisplay: string;
 };
 
+const SERIF = "var(--font-serif)";
+const SANS = "var(--font-latin)";
+
 export const THEMES: ThemeTokens[] = [
+  // ---- Mihrab Night: night sky + gold arch ----
   {
-    id: "emerald",
+    id: "mihrab-navy",
+    name: "Navy & Gold",
+    design: "mihrab",
+    bg: "#0e1d3d",
+    fg: "#f3e9d2",
+    accent: "#e8c977",
+    muted: "#c9b27a",
+    sky: ["#1d3a6b", "#0e1d3d", "#070f24"],
+    fontDisplay: SERIF,
+  },
+  {
+    id: "mihrab-emerald",
+    name: "Emerald & Gold",
+    design: "mihrab",
+    bg: "#0c3326",
+    fg: "#f1ead2",
+    accent: "#e8c977",
+    muted: "#c9b27a",
+    sky: ["#1a5a45", "#0c3326", "#061c15"],
+    fontDisplay: SERIF,
+  },
+  {
+    id: "mihrab-maroon",
+    name: "Maroon & Gold",
+    design: "mihrab",
+    bg: "#3d0e17",
+    fg: "#f6e6d6",
+    accent: "#e8c977",
+    muted: "#d1ae86",
+    sky: ["#6b1d2a", "#3d0e17", "#1f060b"],
+    fontDisplay: SERIF,
+  },
+  {
+    id: "mihrab-black",
+    name: "Black & Gold",
+    design: "mihrab",
+    bg: "#121212",
+    fg: "#f1ead8",
+    accent: "#e8c977",
+    muted: "#b8a57a",
+    sky: ["#2a2a2a", "#121212", "#050505"],
+    fontDisplay: SERIF,
+  },
+
+  // ---- Parchment & Ink: printed almanac ----
+  {
+    id: "parchment-terracotta",
+    name: "Terracotta",
+    design: "parchment",
+    bg: "#f3ead6",
+    fg: "#2b2118",
+    accent: "#a3482a",
+    muted: "#7a6650",
+    sky: ["#fffaee", "#f3ead6", "#e9dcc0"],
+    fontDisplay: SERIF,
+  },
+  {
+    id: "parchment-forest",
+    name: "Forest Green",
+    design: "parchment",
+    bg: "#f1ecda",
+    fg: "#1f2a1f",
+    accent: "#2f5e3a",
+    muted: "#6a6a52",
+    sky: ["#fbf8ec", "#f1ecda", "#e3dcc2"],
+    fontDisplay: SERIF,
+  },
+  {
+    id: "parchment-indigo",
+    name: "Indigo",
+    design: "parchment",
+    bg: "#f2ecdf",
+    fg: "#1d2238",
+    accent: "#2d3f7a",
+    muted: "#646277",
+    sky: ["#fbf8f0", "#f2ecdf", "#e4dccb"],
+    fontDisplay: SERIF,
+  },
+
+  // ---- Daylight: next-prayer hero under a daytime sky ----
+  {
+    id: "daylight-emerald",
     name: "Emerald",
-    bg: "#f4faf7",
-    fg: "#0b3d2e",
-    accent: "#0f9d63",
-    muted: "#cde9dc",
-    fontDisplay: "var(--font-latin)",
+    design: "daylight",
+    bg: "#f6f8f5",
+    fg: "#0f2a20",
+    accent: "#0f5c45",
+    muted: "#eef4f0",
+    sky: ["#0f5c45", "#12795a", "#3fa07f"],
+    fontDisplay: SANS,
   },
   {
-    id: "gold-navy",
-    name: "Gold on Navy",
-    bg: "#0b1440",
-    fg: "#f6e7bd",
-    accent: "#d4af37",
-    muted: "#1c2a63",
-    fontDisplay: "var(--font-latin)",
+    id: "daylight-dusk",
+    name: "Dusk Purple",
+    design: "daylight",
+    bg: "#f7f5f9",
+    fg: "#231a33",
+    accent: "#4a2f6e",
+    muted: "#f0ecf5",
+    sky: ["#3b2a5c", "#5e3d7e", "#a06a9a"],
+    fontDisplay: SANS,
   },
   {
-    id: "sunset",
-    name: "Sunset",
-    bg: "#2a1128",
-    fg: "#fff1e6",
-    accent: "#ff7849",
-    muted: "#5a2b4a",
-    fontDisplay: "var(--font-latin)",
-  },
-  {
-    id: "minimal",
-    name: "Minimal White",
-    bg: "#ffffff",
-    fg: "#171717",
-    accent: "#171717",
-    muted: "#e5e5e5",
-    fontDisplay: "var(--font-latin)",
-  },
-  {
-    id: "midnight",
-    name: "Midnight",
-    bg: "#0a0e17",
-    fg: "#e6ebf5",
-    accent: "#5b8def",
-    muted: "#1c2333",
-    fontDisplay: "var(--font-latin)",
-  },
-  {
-    id: "ramadan",
-    name: "Ramadan",
-    bg: "#0f1c3f",
-    fg: "#f5efe0",
-    accent: "#c9a24b",
-    muted: "#1f2f5c",
-    fontDisplay: "var(--font-arabic)",
-  },
-  // Heritage palettes — named after holy sites / historic centres as colour
-  // inspiration only (the Kiswah's black-and-gold, Madinah's green dome,
-  // the Dome of the Rock's teal-and-gold, Makkah's marble, Andalusi
-  // terracotta, Iznik cobalt, Samarkand blue, desert sand).
-  {
-    id: "kaaba",
-    name: "Kaaba",
-    bg: "#0b0b0d",
-    fg: "#efe6cf",
-    accent: "#c9a227",
-    muted: "#1c1a16",
-    fontDisplay: "var(--font-arabic)",
-  },
-  {
-    id: "nabawi",
-    name: "Nabawi",
-    bg: "#0c3b2e",
-    fg: "#f3ecd8",
-    accent: "#d9b44a",
-    muted: "#12513e",
-    fontDisplay: "var(--font-arabic)",
-  },
-  {
-    id: "aqsa",
-    name: "Aqsa",
-    bg: "#0a3a46",
-    fg: "#eaf3f2",
-    accent: "#e2b64c",
-    muted: "#10505f",
-    fontDisplay: "var(--font-latin)",
-  },
-  {
-    id: "haram",
-    name: "Haram",
-    bg: "#f6f2ea",
-    fg: "#2a2118",
-    accent: "#b9922e",
-    muted: "#e7ddca",
-    fontDisplay: "var(--font-latin)",
-  },
-  {
-    id: "andalus",
-    name: "Andalus",
-    bg: "#2b1410",
-    fg: "#f6e7d4",
-    accent: "#d97843",
-    muted: "#4a271d",
-    fontDisplay: "var(--font-latin)",
-  },
-  {
-    id: "iznik",
-    name: "Iznik",
-    bg: "#f3f6fb",
-    fg: "#12315e",
-    accent: "#1f7a8c",
-    muted: "#dbe6f2",
-    fontDisplay: "var(--font-latin)",
-  },
-  {
-    id: "samarkand",
-    name: "Samarkand",
-    bg: "#0e2a6b",
-    fg: "#eaf0ff",
-    accent: "#2bb3c0",
-    muted: "#173a8f",
-    fontDisplay: "var(--font-arabic)",
-  },
-  {
-    id: "sahara",
-    name: "Sahara",
-    bg: "#f4ead6",
-    fg: "#3a2a17",
-    accent: "#b5701f",
-    muted: "#e6d6b8",
-    fontDisplay: "var(--font-latin)",
+    id: "daylight-ocean",
+    name: "Ocean Blue",
+    design: "daylight",
+    bg: "#f4f7fa",
+    fg: "#0d2236",
+    accent: "#0d3f63",
+    muted: "#e9f0f6",
+    sky: ["#0d3f63", "#156591", "#4b9cc4"],
+    fontDisplay: SANS,
   },
 ];
+
+export function themesFor(design: DesignId): ThemeTokens[] {
+  return THEMES.filter((t) => t.design === design);
+}
+
+/** The theme for `id` when it belongs to `design`, otherwise that design's first (default) colour. */
+export function resolveTheme(design: DesignId, id: string | undefined): ThemeTokens {
+  const options = themesFor(design);
+  return options.find((t) => t.id === id) ?? options[0];
+}

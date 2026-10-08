@@ -16,6 +16,9 @@
  * imported per script to keep the bundle lean.
  */
 
+/* Crimson Pro: the classic serif used by the Mihrab Night and Parchment designs. */
+@import "@fontsource-variable/crimson-pro/wght.css";
+
 /* Noto Sans Bengali: regular + bold, Bengali script subset only. */
 @import "@fontsource/noto-sans-bengali/bengali-400.css";
 @import "@fontsource/noto-sans-bengali/bengali-700.css";
@@ -34,6 +37,7 @@
   --font-latin: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-bengali: "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
   --font-arabic: "Amiri", "Traditional Arabic", serif;
+  --font-serif: "Crimson Pro Variable", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
 .font-latin {

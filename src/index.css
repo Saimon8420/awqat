@@ -3,6 +3,10 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
+@theme {
+  --font-serif: "Crimson Pro Variable", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
