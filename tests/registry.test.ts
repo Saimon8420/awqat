@@ -3,8 +3,8 @@ import { DESIGNS, componentFor, designById } from "../src/templates/registry";
 import { THEMES, resolveTheme, themesFor } from "../src/templates/themes";
 
 describe("design registry", () => {
-  it("has the three designs, each rendering every format", () => {
-    expect(DESIGNS.map((d) => d.id)).toEqual(["mihrab", "parchment", "daylight"]);
+  it("has the ten designs, each rendering every format", () => {
+    expect(DESIGNS.map((d) => d.id)).toEqual(["mihrab", "parchment", "daylight", "alhambra", "lantern", "minimal", "desert", "sixtydome", "kiswa", "crescent"]);
     for (const d of DESIGNS) {
       for (const format of ["daily", "monthly", "year"] as const) {
         expect(typeof componentFor(d.id, format)).toBe("function");
@@ -25,7 +25,8 @@ describe("design registry", () => {
     ]);
     expect(themesFor("parchment")).toHaveLength(3);
     expect(themesFor("daylight")).toHaveLength(3);
-    expect(THEMES).toHaveLength(10);
+    for (const d of ["alhambra", "lantern", "minimal", "desert", "sixtydome", "kiswa", "crescent"] as const) expect(themesFor(d)).toHaveLength(3);
+    expect(THEMES).toHaveLength(31);
   });
 
   it("resolves a colour only within its design", () => {
