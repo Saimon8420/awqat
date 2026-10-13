@@ -1,6 +1,6 @@
 import type { Lang } from "./i18n";
 import type { DesignId } from "@/templates/themes";
-import { resolveTheme } from "@/templates/themes";
+import { THEMES, resolveTheme } from "@/templates/themes";
 
 export type StudioState = {
   lat: number;
@@ -26,6 +26,8 @@ export type StudioState = {
   showNext: boolean;
   lang: Lang;
   hour12: boolean;
+  /** Days to move every Hijri date by, for local moon sighting (-2..2). */
+  hijriAdjust: number;
   numerals: Lang;
   theme: string;
   accent: string;
@@ -77,6 +79,7 @@ export const DEFAULT_STATE: StudioState = {
   showNext: true,
   lang: "en",
   hour12: true,
+  hijriAdjust: 0,
   numerals: "en",
   theme: "mihrab-navy",
   accent: "",
@@ -115,6 +118,7 @@ const SCALAR_KEYS = [
   "showNext",
   "lang",
   "hour12",
+  "hijriAdjust",
   "numerals",
   "theme",
   "accent",
@@ -128,7 +132,7 @@ const SCALAR_KEYS = [
   "orientation",
 ] as const;
 
-const NUMBER_KEYS = new Set(["lat", "lon", "year", "month", "day", "bgDim", "bgBlur", "radius"]);
+const NUMBER_KEYS = new Set(["lat", "lon", "year", "month", "day", "hijriAdjust", "bgDim", "bgBlur", "radius"]);
 const BOOLEAN_KEYS = new Set([
   "hour12",
   "showQibla",
@@ -142,14 +146,38 @@ const FORMAT_VALUES = new Set(["daily", "monthly", "year"]);
 const LANG_VALUES = new Set(["en", "bn", "ar"]);
 const ORIENTATION_VALUES = new Set(["portrait", "landscape"]);
 
+/**
+ * The settings as a query string, keeping only what differs from the defaults
+ * so links stay short. Today's date is the default, so a link without a date
+ * always opens on the day it's viewed.
+ */
 export function encodeState(s: StudioState): string {
   const params = new URLSearchParams();
   for (const key of SCALAR_KEYS) {
     const value = s[key];
-    if (value === undefined || value === null) continue;
+    if (value === undefined || value === null || value === "") continue;
+    if (value === DEFAULT_STATE[key]) continue;
     params.set(key, String(value));
   }
   return params.toString();
+}
+
+/**
+ * Starting settings. A link with settings in it is complete on its own (missing
+ * keys mean "default"), so the visitor's own saved choices don't leak into
+ * someone else's card; only things that never go in a link (photo, logo, rows)
+ * come from this browser. A bare address resumes where this browser left off.
+ */
+export function initialState(local: Partial<StudioState> | null, query: string): StudioState {
+  const fromUrl = decodeState(query);
+  if (Object.keys(fromUrl).length === 0) return { ...DEFAULT_STATE, ...(local ?? {}) };
+  const kept: Partial<StudioState> = {};
+  if (local) {
+    for (const [k, v] of Object.entries(local)) {
+      if (!(SCALAR_KEYS as readonly string[]).includes(k)) (kept as Record<string, unknown>)[k] = v;
+    }
+  }
+  return { ...DEFAULT_STATE, ...kept, ...fromUrl };
 }
 
 export function decodeState(query: string): Partial<StudioState> {
@@ -182,7 +210,7 @@ export function decodeState(query: string): Partial<StudioState> {
   return result as Partial<StudioState>;
 }
 
-const DESIGN_IDS = new Set<string>(["mihrab", "parchment", "daylight"]);
+const DESIGN_IDS = new Set<string>(THEMES.map((t) => t.design));
 
 /**
  * Before the redesign each format had its own templates ("daily-classic",
@@ -212,6 +240,7 @@ export function migrateState(s: StudioState): StudioState {
     ...next,
     masjid: next.masjid ?? false,
     ramadan: next.ramadan ?? false,
+    hijriAdjust: Math.max(-2, Math.min(2, Math.round(Number(next.hijriAdjust) || 0))),
     showFasting: next.showFasting ?? true,
     showArabic: next.showArabic ?? true,
     showNext: next.showNext ?? true,

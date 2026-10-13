@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { GRADIENTS } from "@/graphics/backgrounds";
+import { useDraft } from "@/lib/use-draft";
 import { useStudio } from "./context";
 
 type BgType = "none" | "gradient" | "photo";
@@ -37,6 +38,8 @@ const GRADIENT_ITEMS: Record<string, string> = Object.fromEntries(
  */
 export function BackgroundField() {
   const { state, updateState } = useStudio();
+  const [dim, setDim] = useDraft(state.bgDim ?? 55, (v: number) => updateState({ bgDim: v }));
+  const [blur, setBlur] = useDraft(state.bgBlur ?? 0, (v: number) => updateState({ bgBlur: v }));
 
   // Local so choosing "Photo" reveals the uploader before a file is picked —
   // state alone can't tell "photo selected, none uploaded yet" from "none".
@@ -115,15 +118,15 @@ export function BackgroundField() {
                     Dim
                   </Label>
                   <span className="text-xs tabular-nums text-muted-foreground">
-                    {state.bgDim ?? 55}%
+                    {dim}%
                   </span>
                 </div>
                 <Slider
                   id="bg-dim-slider"
                   min={0}
                   max={100}
-                  value={state.bgDim ?? 55}
-                  onValueChange={(v) => updateState({ bgDim: v as number })}
+                  value={dim}
+                  onValueChange={(v) => setDim(v as number)}
                 />
               </div>
 
@@ -133,15 +136,15 @@ export function BackgroundField() {
                     Blur
                   </Label>
                   <span className="text-xs tabular-nums text-muted-foreground">
-                    {state.bgBlur ?? 0}px
+                    {blur}px
                   </span>
                 </div>
                 <Slider
                   id="bg-blur-slider"
                   min={0}
                   max={20}
-                  value={state.bgBlur ?? 0}
-                  onValueChange={(v) => updateState({ bgBlur: v as number })}
+                  value={blur}
+                  onValueChange={(v) => setBlur(v as number)}
                 />
               </div>
             </>

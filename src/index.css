@@ -247,3 +247,17 @@
   width: 16px;
   height: 16px;
 }
+
+/* Bengali script breaks apart when letter-spaced: cards drop tracking for it. */
+[data-script="bn"],
+[data-script="bn"] * {
+  letter-spacing: 0 !important;
+}
+
+/* Swipe rows (phone design strip) scroll without showing a scrollbar. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  DEFAULT_STATE,
-  decodeState,
+  initialState,
   encodeState,
   loadLocal,
   migrateState,
@@ -17,6 +16,7 @@ import {
   type QiblaData,
 } from "@/lib/miqaat";
 import { isRamadanMonth, specialDaysForMonth, type SpecialType } from "@/lib/calendar";
+import { adjustHijri } from "@/lib/hijri-adjust";
 import { dir } from "@/lib/i18n";
 import { useIsMobile } from "@/lib/use-media-query";
 import { MobileStudio } from "./MobileStudio";
@@ -25,9 +25,7 @@ import { PreviewStage } from "./PreviewStage";
 import { StudioContext, type StudioContextValue } from "./context";
 
 function computeInitialState(): StudioState {
-  const fromLocal = loadLocal();
-  const fromUrl = decodeState(window.location.search);
-  const merged: StudioState = { ...DEFAULT_STATE, ...(fromLocal ?? {}), ...fromUrl };
+  const merged = initialState(loadLocal(), window.location.search);
   // Maps pre-redesign template ids and keeps the colour valid for the design.
   return migrateState(merged);
 }
@@ -128,7 +126,7 @@ export function Studio() {
         madhab: state.madhab,
       }),
       getQibla({ lat: state.lat, lon: state.lon }),
-      getCountdowns({ lat: state.lat, lon: state.lon, year: state.year }),
+      getCountdowns({ lat: state.lat, lon: state.lon, year: state.year, adjustment: state.hijriAdjust }),
     ])
       .then(([monthly, qibla, countdowns]) => {
         if (cancelled) return;
@@ -137,7 +135,6 @@ export function Studio() {
           monthly,
           qibla,
           countdowns,
-          specialDays: specialDaysForMonth(monthly.days),
           loading: false,
           error: null,
         }));
@@ -157,7 +154,7 @@ export function Studio() {
     // Every format (including "year") fetches the selected month here so
     // `monthly`/`qibla`/`countdowns` are always populated for TemplateProps;
     // the year format's full 12-month grid is fetched separately below.
-  }, [state.lat, state.lon, state.year, state.month, state.method, state.madhab, state.format]);
+  }, [state.lat, state.lon, state.year, state.month, state.method, state.madhab, state.format, state.hijriAdjust]);
 
   // Year format: fetch all 12 months of state.year in parallel for the
   // year-overview poster's per-month panels. getMonthly caches per
@@ -201,12 +198,18 @@ export function Studio() {
     };
   }, [state.lat, state.lon, state.year, state.method, state.madhab, state.format]);
 
+  // The fetched months with the user's Hijri adjustment applied. Changing the
+  // adjustment re-derives these without refetching.
+  const shift = state.hijriAdjust;
+  const monthly = useMemo(() => (fetchState.monthly ? adjustHijri(fetchState.monthly, shift) : null), [fetchState.monthly, shift]);
+  const months = useMemo(() => fetchState.months?.map((m) => adjustHijri(m, shift)) ?? null, [fetchState.months, shift]);
+  const specialDays = useMemo(() => (monthly ? specialDaysForMonth(monthly.days) : {}), [monthly]);
+
   // Auto-suggest Ramadan mode: once per fetched month, if the month is
   // Ramadan-dominant and the user hasn't flipped the switch themselves, turn
   // it on — but only while viewing the monthly format. Gated by
   // `ramadanSuggestedForRef` so it fires at most once per month-load.
   useEffect(() => {
-    const monthly = fetchState.monthly;
     if (!monthly) return;
     if (state.format !== "monthly") return;
     if (ramadanTouched) return;
@@ -217,7 +220,7 @@ export function Studio() {
 
     ramadanSuggestedForRef.current = monthKey;
     setState((prev) => (prev.ramadan ? prev : { ...prev, ramadan: true }));
-  }, [fetchState.monthly, state.format, ramadanTouched]);
+  }, [monthly, state.format, ramadanTouched]);
 
   const ctxValue: StudioContextValue = useMemo(
     () => ({
@@ -230,9 +233,9 @@ export function Studio() {
       setExporting,
       zoom,
       setZoom,
-      monthly: fetchState.monthly,
+      monthly: monthly,
     }),
-    [state, updateState, methodOverridden, exporting, zoom, fetchState.monthly],
+    [state, updateState, methodOverridden, exporting, zoom, monthly],
   );
 
   // The preview is built once and handed to whichever shell is active, so
@@ -261,11 +264,11 @@ export function Studio() {
       </pre>
 
       <PreviewStage
-        monthly={fetchState.monthly}
+        monthly={monthly}
         qibla={fetchState.qibla}
         countdowns={fetchState.countdowns}
-        specialDays={fetchState.specialDays}
-        months={fetchState.months}
+        specialDays={specialDays}
+        months={months}
         loading={fetchState.loading}
         error={fetchState.error}
       />

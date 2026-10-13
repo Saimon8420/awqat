@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, MinusIcon, PlusIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { useDraft } from "@/lib/use-draft";
+import { HIJRI_ADJUST_MAX, HIJRI_ADJUST_MIN, hijriFor } from "@/lib/hijri-adjust";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -24,7 +26,7 @@ import { BackgroundField } from "./BackgroundField";
 import { CalculationFields } from "./CalculationFields";
 import { PersonalizeFields, templateShowsQibla } from "./PersonalizeFields";
 import { LocationBar } from "./LocationBar";
-import { DesignThumb, useApplyDesign } from "./DesignStrip";
+import { DesignThumb, useApplyDesign, useThumbState } from "./DesignStrip";
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
@@ -103,6 +105,7 @@ function ToggleRow({
 
 export function DesignsPanel() {
   const { state, updateState, setRamadanTouched, monthly } = useStudio();
+  const thumbState = useThumbState(state);
   const apply = useApplyDesign();
 
   return (
@@ -124,7 +127,7 @@ export function DesignsPanel() {
             >
               <span className="shrink-0 overflow-hidden rounded-lg shadow-sm">
                 {monthly ? (
-                  <DesignThumb design={d.id} theme={theme} monthly={monthly} state={state} width={64} />
+                  <DesignThumb design={d.id} theme={theme} monthly={monthly} state={thumbState} width={64} />
                 ) : (
                   <span className="block h-[114px] w-16" style={{ background: `linear-gradient(180deg, ${theme.sky[0]}, ${theme.sky[2]})` }} />
                 )}
@@ -167,11 +170,31 @@ export function DesignsPanel() {
 
 /* ------------------------------------------------------------------ */
 
+function RadiusField() {
+  const { state, updateState } = useStudio();
+  const [radius, setRadius] = useDraft(state.radius ?? 0, (v: number) => updateState({ radius: v }));
+  return (
+    <div className="flex items-center gap-3">
+      <Slider
+        id="radius-slider"
+        aria-label="Corner radius"
+        min={0}
+        max={48}
+        value={radius}
+        onValueChange={(v) => setRadius(v as number)}
+        className="flex-1"
+      />
+      <span className="w-9 text-right text-xs tabular-nums text-muted-foreground">{radius}px</span>
+    </div>
+  );
+}
+
 function AccentField() {
   const { state, updateState } = useStudio();
   const theme = resolveTheme(state.template, state.theme);
-  const custom = HEX_RE.test(state.accent);
-  const value = custom ? state.accent : theme.accent;
+  const [accent, setAccent] = useDraft(state.accent, (v: string) => updateState({ accent: v }));
+  const custom = HEX_RE.test(accent);
+  const value = custom ? accent : theme.accent;
   return (
     <Popover>
       <PopoverTrigger render={<Button type="button" variant="outline" className="w-full justify-start gap-2" />}>
@@ -180,7 +203,7 @@ function AccentField() {
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64">
         <div className="flex flex-col gap-3">
-          <ColorPicker value={value} onChange={(hex) => updateState({ accent: hex })} />
+          <ColorPicker value={value} onChange={setAccent} />
           <div className="grid grid-cols-5 gap-2">
             {ACCENT_PRESETS.map((hex) => (
               <button
@@ -189,11 +212,11 @@ function AccentField() {
                 aria-label={`Accent ${hex}`}
                 className="size-7 rounded-full border border-border outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring"
                 style={{ backgroundColor: hex }}
-                onClick={() => updateState({ accent: hex })}
+                onClick={() => setAccent(hex)}
               />
             ))}
           </div>
-          <Button type="button" variant="ghost" size="sm" className="w-fit" onClick={() => updateState({ accent: "" })}>
+          <Button type="button" variant="ghost" size="sm" className="w-fit" onClick={() => setAccent("")}>
             Design default
           </Button>
         </div>
@@ -277,18 +300,7 @@ export function StylePanel({ withModes = false }: { withModes?: boolean } = {}) 
       <BackgroundField />
 
       <GroupLabel>Corner radius</GroupLabel>
-      <div className="flex items-center gap-3">
-        <Slider
-          id="radius-slider"
-          aria-label="Corner radius"
-          min={0}
-          max={48}
-          value={state.radius ?? 0}
-          onValueChange={(v) => updateState({ radius: v as number })}
-          className="flex-1"
-        />
-        <span className="w-9 text-right text-xs tabular-nums text-muted-foreground">{state.radius ?? 0}px</span>
-      </div>
+      <RadiusField />
 
       <GroupLabel>Show on card</GroupLabel>
       <ToggleRow id="show-fasting" checked={state.showFasting} onChange={(v) => updateState({ showFasting: v })}>
@@ -388,12 +400,44 @@ export function TextPanel() {
 
 /* ------------------------------------------------------------------ */
 
+/** Moves every Hijri date a day or two for local moon sighting. */
+function HijriAdjustField() {
+  const { state, updateState, monthly } = useStudio();
+  const n = state.hijriAdjust ?? 0;
+  const set = (v: number) => updateState({ hijriAdjust: Math.max(HIJRI_ADJUST_MIN, Math.min(HIJRI_ADJUST_MAX, v)) });
+  const iso = monthly?.days.find((d) => d.dateISO.slice(8, 10) === String(state.day).padStart(2, "0"))?.dateISO;
+  const h = iso ? hijriFor(iso, n) : null;
+  const words = n === 0 ? "As calculated" : `${n > 0 ? "+" : "−"}${Math.abs(n)} day${Math.abs(n) > 1 ? "s" : ""}`;
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <Button type="button" variant="outline" size="icon" aria-label="One day earlier" disabled={n <= HIJRI_ADJUST_MIN} onClick={() => set(n - 1)} className="size-10 cursor-pointer">
+          <MinusIcon className="size-4" />
+        </Button>
+        <div className="flex min-h-10 flex-1 flex-col items-center justify-center rounded-md border border-border bg-card px-2 text-center" aria-live="polite">
+          <span className="text-sm font-semibold tabular-nums">{words}</span>
+          {h && <span className="text-[0.7rem] text-muted-foreground">{`${h.day} ${h.monthName} ${h.year}`}</span>}
+        </div>
+        <Button type="button" variant="outline" size="icon" aria-label="One day later" disabled={n >= HIJRI_ADJUST_MAX} onClick={() => set(n + 1)} className="size-10 cursor-pointer">
+          <PlusIcon className="size-4" />
+        </Button>
+      </div>
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        Moon sighting differs by country. In Bangladesh the date is often one day behind, so try −1. Prayer times don't change.
+      </p>
+    </div>
+  );
+}
+
 export function TimesPanel() {
   const { state, updateState } = useStudio();
   return (
     <div className="flex flex-col">
       <GroupLabel>Calculation</GroupLabel>
       <CalculationFields />
+
+      <GroupLabel>Hijri date</GroupLabel>
+      <HijriAdjustField />
 
       <GroupLabel>Clock</GroupLabel>
       <ToggleRow id="hour12-switch" checked={state.hour12} onChange={(v) => updateState({ hour12: v })}>

@@ -1,17 +1,36 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { encodeState, decodeState, saveLocal, loadLocal, migrateState, DEFAULT_STATE, type StudioState } from "../src/lib/state";
+import { encodeState, decodeState, saveLocal, loadLocal, migrateState, initialState, DEFAULT_STATE, type StudioState } from "../src/lib/state";
 
 beforeEach(() => localStorage.clear());
 
 describe("state", () => {
   it("round-trips core fields through the URL", () => {
-    const s = { ...DEFAULT_STATE, city:"Dhaka", lat:23.81, lon:90.41, format:"monthly" as const, lang:"bn" as const };
+    const s = { ...DEFAULT_STATE, city:"Chittagong", lat:22.36, lon:91.78, format:"monthly" as const, lang:"bn" as const };
     const decoded = decodeState(encodeState(s));
-    expect(decoded.city).toBe("Dhaka");
-    expect(decoded.lat).toBeCloseTo(23.81);
+    expect(decoded.city).toBe("Chittagong");
+    expect(decoded.lat).toBeCloseTo(22.36);
     expect(decoded.format).toBe("monthly");
     expect(decoded.lang).toBe("bn");
   });
+  it("keeps a new design's link valid", () => {
+    expect(migrateState({ ...DEFAULT_STATE, ...decodeState("template=sixtydome&theme=sixtydome-monsoon") } as StudioState)).toMatchObject({ template: "sixtydome", theme: "sixtydome-monsoon" });
+  });
+
+  it("leaves defaults out of the link so it stays short", () => {
+    expect(encodeState(DEFAULT_STATE)).toBe("");
+    expect(encodeState({ ...DEFAULT_STATE, template: "parchment", theme: "parchment-forest" })).toBe("template=parchment&theme=parchment-forest");
+  });
+
+  it("a link is complete on its own; this browser only adds photo/logo/rows", () => {
+    const local = { ...DEFAULT_STATE, city: "Sylhet", lang: "bn" as const, bgImage: "data:x" };
+    const s = initialState(local, "?template=daylight");
+    expect(s.city).toBe(DEFAULT_STATE.city);
+    expect(s.lang).toBe("en");
+    expect(s.template).toBe("daylight");
+    expect(s.bgImage).toBe("data:x");
+    expect(initialState(local, "").city).toBe("Sylhet");
+  });
+
   it("omits data-URI fields from the URL but keeps them in localStorage", () => {
     const s = { ...DEFAULT_STATE, bgImage: "data:image/png;base64,AAAA" };
     expect(encodeState(s)).not.toContain("data:image");

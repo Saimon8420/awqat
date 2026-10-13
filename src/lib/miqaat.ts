@@ -123,13 +123,16 @@ export function getCountdowns(p: {
   lat: number;
   lon: number;
   year: number;
+  /** Hijri day adjustment for local moon sighting. */
+  adjustment?: number;
 }): Promise<Countdowns> {
-  const key = `mq:events:${p.lat}:${p.lon}:${p.year}`;
+  const key = `mq:events:${p.lat}:${p.lon}:${p.year}:${p.adjustment ?? 0}`;
   const q = new URLSearchParams({
     lat: String(p.lat),
     lng: String(p.lon),
     year: String(p.year),
   });
+  if (p.adjustment) q.set("adjustment", String(p.adjustment));
   return cachedGet(key, `/calendar/events?${q}`, (d) => ({
     isRamadan: d.isRamadan,
     daysUntilRamadan: d.daysUntilRamadan,
