@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { dir, label, toNumerals } from "@/lib/i18n";
 import { DecorLayer } from "@/graphics/DecorLayer";
-import { QiblaCompass } from "@/graphics/QiblaCompass";
+import { QiblaTape } from "@/graphics/QiblaTape";
 import type { TemplateProps } from "../registry";
 import { YearGrid, hijriYearSpan, monthName } from "../year/yearGrid";
 import {
@@ -198,11 +198,10 @@ export function DaylightDaily(props: TemplateProps) {
           {!ramadan && fastBlock}
 
           {showQibla && qibla && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 24 * k, color: accent }}>
-              <QiblaCompass bearing={qibla.bearing} accent={accent} numerals={numerals} size={80 * k} />
-              <span style={{ fontSize: 24 * k, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase" }}>{label("qibla", lang)}</span>
-            </div>
-          )}
+        <div style={{ marginTop: 28 * k }}>
+          <QiblaTape bearing={qibla.bearing} distanceKm={qibla.distanceKm} accent={accent} ink={theme.fg} lang={lang} numerals={numerals} width="100%" k={k} />
+        </div>
+      )}
         </div>
 
         {hasPersonal && personal?.dua ? (

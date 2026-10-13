@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { dir, label, toNumerals } from "@/lib/i18n";
 import { DecorLayer } from "@/graphics/DecorLayer";
-import { QiblaCompass } from "@/graphics/QiblaCompass";
+import { QiblaTape } from "@/graphics/QiblaTape";
 import type { TemplateProps } from "../registry";
 import { YearGrid, hijriYearSpan, monthName } from "../year/yearGrid";
 import {
@@ -270,11 +270,10 @@ export function MihrabDaily(props: TemplateProps) {
         </div>
 
         {showQibla && qibla && (
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 18 * k, color: accent }}>
-            <QiblaCompass bearing={qibla.bearing} accent={accent} numerals={numerals} size={84 * k} />
-            <span style={{ fontSize: 26 * k, letterSpacing: "0.18em", textTransform: "uppercase" }}>{label("qibla", lang)}</span>
-          </div>
-        )}
+        <div style={{ marginTop: 22 * k, alignSelf: "stretch", width: "100%" }}>
+          <QiblaTape bearing={qibla.bearing} distanceKm={qibla.distanceKm} accent={accent} ink={theme.fg} lang={lang} numerals={numerals} width="100%" k={k} />
+        </div>
+      )}
 
         {hasPersonal && personal?.dua && (
           <div style={{ fontFamily: serif, fontStyle: "italic", fontSize: 30 * k, opacity: 0.85, marginTop: 18 * k, maxWidth: "100%", overflowWrap: "anywhere" }}>
