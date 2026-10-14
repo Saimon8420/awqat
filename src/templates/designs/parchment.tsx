@@ -1,3 +1,5 @@
+import { FitColumn } from "../FitColumn";
+import { fitText } from "@/lib/card-text";
 import type { CSSProperties } from "react";
 import { dir, label, toNumerals } from "@/lib/i18n";
 import { DecorLayer } from "@/graphics/DecorLayer";
@@ -120,7 +122,7 @@ export function ParchmentDaily(props: TemplateProps) {
       <DecorLayer state={state} theme={theme} accent={accent} />
       <InkFrame ink={ink} inset={52} />
 
-      <div style={{ position: "absolute", left: 128, right: 128, top: 128 * k, bottom: 108 * k, display: "flex", flexDirection: "column" }}>
+      <FitColumn style={{ position: "absolute", left: 128, right: 128, top: 128 * k, bottom: 108 * k, display: "flex", flexDirection: "column" }}>
         {masjid ? (
           <div style={{ display: "flex", justifyContent: "center" }}>
             <OrgMark logo={org?.logo} name={title} size={96 * k} bg={alpha(accent, 0.1)} color={accent} radius="14px" border={`2px solid ${ink}`} />
@@ -158,8 +160,8 @@ export function ParchmentDaily(props: TemplateProps) {
         </div>
 
         {(state.showNext && next) || (hasPersonal && personal?.greeting) || (masjid && org?.address) ? (
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 20, fontStyle: "italic", fontSize: 30 * k, color: accent, marginTop: 14 * k }}>
-            <span>{masjid ? org?.address : personal?.greeting}</span>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 20, fontStyle: "italic",  color: accent, marginTop: 14 * k, fontSize: 30 * k }}>
+            <span style={{ minWidth: 0, ...fitText(masjid ? org?.address : personal?.greeting, 30 * k, 2) }}>{masjid ? org?.address : personal?.greeting}</span>
             {state.showNext && next && (
               <span>
                 {label("next", lang)}: {label(next.key, lang)} {next.inText}
@@ -198,19 +200,19 @@ export function ParchmentDaily(props: TemplateProps) {
       )}
 
         {hasPersonal && personal?.dua && (
-          <div style={{ textAlign: "center", fontStyle: "italic", fontSize: 30 * k, color: alpha(ink, 0.8), marginTop: 14 * k, overflowWrap: "anywhere" }}>
+          <div style={{ textAlign: "center", fontStyle: "italic",  color: alpha(ink, 0.8), marginTop: 14 * k, overflowWrap: "anywhere", ...fitText(personal.dua, 30 * k, 3) }}>
             {personal.dua}
           </div>
         )}
 
         {!ramadan && ribbon}
         {masjid && org?.tagline && (
-          <div style={{ textAlign: "center", fontStyle: "italic", fontSize: 26 * k, color: accent, marginTop: 14 * k }}>{org.tagline}</div>
+          <div style={{ textAlign: "center", fontStyle: "italic",  color: accent, marginTop: 14 * k, ...fitText(org.tagline, 26 * k, 2) }}>{org.tagline}</div>
         )}
         <div dir="ltr" style={{ textAlign: "center", fontFamily: SANS, fontSize: 22 * k, color: theme.muted, marginTop: 20 * k, letterSpacing: "0.06em" }}>
           {methodText(monthly)}
         </div>
-      </div>
+      </FitColumn>
     </div>
   );
 }
@@ -249,7 +251,7 @@ export function ParchmentMonthly(props: TemplateProps) {
           {label("prayerTimetable", lang)} · {place} · {hijriMonthSpan(monthly, numerals)}
         </div>
         {(masjid ? org?.address : personal?.greeting) && (
-          <div style={{ fontStyle: "italic", fontSize: 22, color: accent, marginTop: 4 }}>{masjid ? org?.address : personal?.greeting}</div>
+          <div style={{ fontStyle: "italic",  color: accent, marginTop: 4, ...fitText(masjid ? org?.address : personal?.greeting, 22, 2) }}>{masjid ? org?.address : personal?.greeting}</div>
         )}
       </header>
 
@@ -275,8 +277,8 @@ export function ParchmentMonthly(props: TemplateProps) {
       />
 
       <footer style={{ marginTop: 12, textAlign: "center" }}>
-        {!masjid && personal?.dua && <div style={{ fontStyle: "italic", fontSize: 22, color: alpha(ink, 0.8), marginBottom: 4 }}>{personal.dua}</div>}
-        {masjid && org?.tagline && <div style={{ fontStyle: "italic", fontSize: 20, color: accent, marginBottom: 4 }}>{org.tagline}</div>}
+        {!masjid && personal?.dua && <div style={{ fontStyle: "italic",  color: alpha(ink, 0.8), marginBottom: 4, ...fitText(personal.dua, 22, 2) }}>{personal.dua}</div>}
+        {masjid && org?.tagline && <div style={{ fontStyle: "italic",  color: accent, marginBottom: 4, ...fitText(org.tagline, 20, 2) }}>{org.tagline}</div>}
         <div dir="ltr" style={{ fontFamily: SANS, fontSize: 16, color: theme.muted, letterSpacing: "0.06em" }}>
           {methodText(monthly)}
         </div>
@@ -312,7 +314,7 @@ export function ParchmentYear(props: TemplateProps) {
           <div style={{ fontWeight: 700, fontSize: 46, lineHeight: 1 }}>
             {place} · {toNumerals(String(state.year), numerals)}
           </div>
-          <div style={{ fontStyle: "italic", fontSize: 18, color: accent, marginTop: 4 }}>
+          <div style={{ fontStyle: "italic",  color: accent, marginTop: 4, fontSize: 18, overflowWrap: "anywhere" }}>
             {span ? toNumerals(span, numerals) : ""}
             {!masjid && personal?.greeting ? ` · ${personal.greeting}` : ""}
           </div>
@@ -336,7 +338,7 @@ export function ParchmentYear(props: TemplateProps) {
       />
 
       {!masjid && personal?.dua && (
-        <div style={{ marginTop: 8, textAlign: "center", fontStyle: "italic", fontSize: 16, color: alpha(ink, 0.8) }}>{personal.dua}</div>
+        <div style={{ marginTop: 8, textAlign: "center", fontStyle: "italic",  color: alpha(ink, 0.8), ...fitText(personal.dua, 16, 2) }}>{personal.dua}</div>
       )}
     </div>
   );

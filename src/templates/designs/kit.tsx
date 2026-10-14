@@ -1,3 +1,5 @@
+import { FitColumn } from "../FitColumn";
+import { fitText } from "@/lib/card-text";
 import type { CSSProperties, ReactNode } from "react";
 import { dir, label, toNumerals } from "@/lib/i18n";
 import { DecorLayer } from "@/graphics/DecorLayer";
@@ -94,9 +96,9 @@ export function DailyShell({
     <div dir={dir(state.lang)} data-script={state.lang} style={rootStyle(props)}>
       {art}
       <DecorLayer state={state} theme={theme} accent={state.accent || theme.accent} />
-      <div style={{ position: "absolute", top: pad[0] * k, left: pad[1], right: pad[1], bottom: pad[2] * k, display: "flex", flexDirection: "column" }}>
+      <FitColumn style={{ position: "absolute", top: pad[0] * k, left: pad[1], right: pad[1], bottom: pad[2] * k, display: "flex", flexDirection: "column" }}>
         {children}
-      </div>
+      </FitColumn>
     </div>
   );
 }
@@ -199,8 +201,8 @@ export function Extras({ props, d, color, accent, align = "center" }: { props: T
   const k = d.k;
   return (
     <div style={{ marginTop: "auto", paddingTop: 20 * k, textAlign: align, color }}>
-      {!masjid && personal?.dua && <div style={{ fontStyle: "italic", fontSize: 30 * k, marginBottom: 14 * k, overflowWrap: "anywhere" }}>{personal.dua}</div>}
-      {masjid && org?.tagline && <div style={{ fontSize: 28 * k, color: accent, marginBottom: 12 * k }}>{org.tagline}</div>}
+      {!masjid && personal?.dua && <div style={{ fontStyle: "italic",  marginBottom: 14 * k, overflowWrap: "anywhere", ...fitText(personal.dua, 30 * k, 3) }}>{personal.dua}</div>}
+      {masjid && org?.tagline && <div style={{ color: accent, marginBottom: 12 * k, ...fitText(org.tagline, 28 * k, 2) }}>{org.tagline}</div>}
       {showQibla && qibla && (
         <div style={{ marginTop: 0 * k, marginBottom: 12 * k }}>
           <QiblaTape bearing={qibla.bearing} distanceKm={qibla.distanceKm} accent={accent} ink={color} lang={d.lang} numerals={d.numerals} width="100%" k={k} />
@@ -217,7 +219,7 @@ export function Extras({ props, d, color, accent, align = "center" }: { props: T
 export function SubLine({ props, style }: { props: TemplateProps; style?: CSSProperties }) {
   const { masjid, org, personal } = props.state;
   const text = masjid ? org?.address : personal?.greeting;
-  return text ? <div style={{ overflowWrap: "anywhere", ...style }}>{text}</div> : null;
+  return text ? <div style={{ ...style, ...fitText(text, Number(style?.fontSize ?? 30), 2) }}>{text}</div> : null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -256,7 +258,7 @@ function Band({ props, spec, kind, heading }: { props: TemplateProps; spec: Page
           <div style={{ fontFamily: spec.headFont ?? displayFont(lang), fontSize: year ? 40 : 56, fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.01em" }}>
             {year ? `${place} · ${toNumerals(String(state.year), numerals)}` : heading}
           </div>
-          <div style={{ fontSize: year ? 15 : 20, color: b.sub, marginTop: 6 }}>
+          <div style={{ fontSize: year ? 15 : 20, color: b.sub, marginTop: 6, overflowWrap: "anywhere" }}>
             {year ? span : `${place} · ${span}`}
             {extra ? ` · ${extra}` : ""}
             {year && months?.[0] ? <span dir="ltr"> · {methodText(months[0])}</span> : null}
@@ -284,7 +286,7 @@ export function KitMonthly({ props, spec }: { props: TemplateProps; spec: PageSp
       <Band props={props} spec={spec} kind="monthly" heading={heading} />
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", padding: landscape ? "18px 40px 22px" : "22px 46px 28px" }}>
         <MonthTable monthly={monthly} specialDays={specialDays} state={state} size={landscape ? 17 : 19} look={spec.table(theme, accent)} />
-        {note && <div style={{ marginTop: 10, textAlign: "center", fontSize: 20, fontStyle: "italic", color: alpha(theme.fg, 0.75) }}>{note}</div>}
+        {note && <div style={{ marginTop: 10, textAlign: "center", fontStyle: "italic", color: alpha(theme.fg, 0.75), ...fitText(note, 20, 2) }}>{note}</div>}
         <div dir="ltr" style={{ marginTop: 8, textAlign: "center", fontSize: 15, color: alpha(theme.fg, 0.5) }}>
           {methodText(monthly)}
         </div>
@@ -303,7 +305,7 @@ export function KitYear({ props, spec }: { props: TemplateProps; spec: PageSpec 
       <Band props={props} spec={spec} kind="year" heading="" />
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", padding: "16px 30px 18px" }}>
         <YearGrid months={months} lang={lang} numerals={numerals} hour12={hour12} theme={theme} accent={accent} look={spec.year(theme, accent)} />
-        {!masjid && personal?.dua && <div style={{ marginTop: 8, textAlign: "center", fontStyle: "italic", fontSize: 15, color: alpha(theme.fg, 0.75) }}>{personal.dua}</div>}
+        {!masjid && personal?.dua && <div style={{ marginTop: 8, textAlign: "center", fontStyle: "italic",  color: alpha(theme.fg, 0.75), ...fitText(personal.dua, 15, 2) }}>{personal.dua}</div>}
       </div>
     </div>
   );

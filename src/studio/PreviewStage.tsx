@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import type { Countdowns, MonthlyResponse, QiblaData } from "@/lib/miqaat";
 import type { SpecialType } from "@/lib/calendar";
 import type { StudioState } from "@/lib/state";
 import { componentFor } from "@/templates/registry";
+import { cardState } from "@/lib/card-text";
 import { resolveTheme } from "@/templates/themes";
 import { useStudio } from "./context";
 
@@ -104,6 +105,8 @@ export function PreviewStage({
 
   const Template = componentFor(state.template, state.format);
   const theme = resolveTheme(state.template, state.theme);
+  // The user's own words, made safe to wrap on the card.
+  const shown = useMemo(() => cardState(state), [state]);
 
   return (
     <div
@@ -164,7 +167,7 @@ export function PreviewStage({
               countdowns={countdowns ?? undefined}
               specialDays={specialDays}
               months={months ?? undefined}
-              state={state}
+              state={shown}
               theme={theme}
             />
           </div>

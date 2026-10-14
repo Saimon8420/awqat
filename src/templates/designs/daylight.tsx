@@ -1,3 +1,5 @@
+import { FitColumn } from "../FitColumn";
+import { fitText } from "@/lib/card-text";
 import type { CSSProperties } from "react";
 import { dir, label, toNumerals } from "@/lib/i18n";
 import { DecorLayer } from "@/graphics/DecorLayer";
@@ -122,7 +124,7 @@ export function DaylightDaily(props: TemplateProps) {
       />
       <DecorLayer state={state} theme={theme} accent={accent} />
 
-      <div style={{ position: "absolute", top: 112 * k, left: 96, right: 96, bottom: 84 * k, display: "flex", flexDirection: "column" }}>
+      <FitColumn style={{ position: "absolute", top: 112 * k, left: 96, right: 96, bottom: 84 * k, display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 22, maxWidth: `calc(100% - ${230 * k}px)` }}>
           {masjid && <OrgMark logo={org?.logo} name={title} size={84 * k} bg="rgba(255,255,255,.18)" color="#ffffff" radius="22px" border="2px solid rgba(255,255,255,.5)" />}
           <div style={{ minWidth: 0 }}>
@@ -134,7 +136,7 @@ export function DaylightDaily(props: TemplateProps) {
           </div>
         </div>
         {hasPersonal && personal?.greeting && (
-          <div style={{ fontSize: 32 * k, fontStyle: "italic", color: "#ffffff", marginTop: 18 * k }}>{personal.greeting}</div>
+          <div style={{ fontStyle: "italic", color: "#ffffff", marginTop: 18 * k, ...fitText(personal.greeting, 32 * k, 2) }}>{personal.greeting}</div>
         )}
 
         <div style={{ marginTop: 92 * k, fontSize: 26 * k, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,.85)" }}>
@@ -205,7 +207,7 @@ export function DaylightDaily(props: TemplateProps) {
         </div>
 
         {hasPersonal && personal?.dua ? (
-          <div style={{ marginTop: 44 * k, textAlign: "center", fontSize: 30 * k, fontStyle: "italic", color: alpha(theme.fg, 0.8), overflowWrap: "anywhere" }}>
+          <div style={{ marginTop: 44 * k, textAlign: "center",  fontStyle: "italic", color: alpha(theme.fg, 0.8), overflowWrap: "anywhere", ...fitText(personal.dua, 30 * k, 3) }}>
             {personal.dua}
           </div>
         ) : k === 1 ? (
@@ -215,12 +217,12 @@ export function DaylightDaily(props: TemplateProps) {
             <div style={{ fontSize: 24, marginTop: 4, opacity: 0.75 }}>{AYAH_TRANSLATION[lang].ref}</div>
           </div>
         ) : null}
-        {masjid && org?.tagline && <div style={{ marginTop: 20 * k, textAlign: "center", fontSize: 28 * k, color: accent }}>{org.tagline}</div>}
+        {masjid && org?.tagline && <div style={{ marginTop: 20 * k, textAlign: "center",  color: accent, ...fitText(org.tagline, 28 * k, 2) }}>{org.tagline}</div>}
 
         <div dir="ltr" style={{ marginTop: "auto", textAlign: "center", fontSize: 22 * k, color: alpha(theme.fg, 0.5) }}>
           {methodText(monthly)}
         </div>
-      </div>
+      </FitColumn>
     </div>
   );
 }
@@ -279,7 +281,7 @@ export function DaylightMonthly(props: TemplateProps) {
           {masjid && <OrgMark logo={org?.logo} name={place} size={72} bg="rgba(255,255,255,.18)" color="#fff" radius="18px" border="2px solid rgba(255,255,255,.5)" />}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 54, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.05 }}>{heading}</div>
-            <div style={{ fontSize: 20, color: "rgba(255,255,255,.85)", marginTop: 6 }}>
+            <div style={{ color: "rgba(255,255,255,.85)", marginTop: 6, fontSize: 20, overflowWrap: "anywhere" }}>
               {place} · {hijriMonthSpan(monthly, numerals)}
               {masjid && org?.address ? ` · ${org.address}` : ""}
               {!masjid && personal?.greeting ? ` · ${personal.greeting}` : ""}
@@ -309,7 +311,7 @@ export function DaylightMonthly(props: TemplateProps) {
           }}
         />
         {(!masjid && personal?.dua) || (masjid && org?.tagline) ? (
-          <div style={{ marginTop: 10, textAlign: "center", fontSize: 20, fontStyle: "italic", color: alpha(theme.fg, 0.75) }}>
+          <div style={{ marginTop: 10, textAlign: "center",  fontStyle: "italic", color: alpha(theme.fg, 0.75), ...fitText(masjid ? org?.tagline : personal?.dua, 20, 2) }}>
             {masjid ? org?.tagline : personal?.dua}
           </div>
         ) : null}
@@ -343,7 +345,7 @@ export function DaylightYear(props: TemplateProps) {
             <div style={{ fontSize: 40, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.05 }}>
               {place} · {toNumerals(String(state.year), numerals)}
             </div>
-            <div style={{ fontSize: 15, color: "rgba(255,255,255,.85)", marginTop: 4 }}>
+            <div style={{ color: "rgba(255,255,255,.85)", marginTop: 4, fontSize: 15, overflowWrap: "anywhere" }}>
               {span ? toNumerals(span, numerals) : label("prayerTimetable", lang)}
               {masjid && org?.address ? ` · ${org.address}` : ""}
               {!masjid && personal?.greeting ? ` · ${personal.greeting}` : ""}
@@ -368,7 +370,7 @@ export function DaylightYear(props: TemplateProps) {
           look={{ panelBg: "#ffffff", panelBorder: alpha(theme.fg, 0.1), headColor: accent, radius: 10 }}
         />
         {!masjid && personal?.dua && (
-          <div style={{ marginTop: 8, textAlign: "center", fontStyle: "italic", fontSize: 15, color: alpha(theme.fg, 0.75) }}>{personal.dua}</div>
+          <div style={{ marginTop: 8, textAlign: "center", fontStyle: "italic",  color: alpha(theme.fg, 0.75), ...fitText(personal.dua, 15, 2) }}>{personal.dua}</div>
         )}
       </div>
     </div>

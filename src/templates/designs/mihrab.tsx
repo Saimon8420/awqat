@@ -1,3 +1,5 @@
+import { FitColumn } from "../FitColumn";
+import { fitText } from "@/lib/card-text";
 import type { CSSProperties } from "react";
 import { dir, label, toNumerals } from "@/lib/i18n";
 import { DecorLayer } from "@/graphics/DecorLayer";
@@ -123,7 +125,7 @@ export function MihrabDaily(props: TemplateProps) {
         <path d="M24 8a13 13 0 1 0 0 24 10 10 0 1 1 0-24Z" fill={accent} />
       </svg>
 
-      <div
+      <FitColumn
         style={{
           position: "absolute",
           left: 140,
@@ -196,7 +198,7 @@ export function MihrabDaily(props: TemplateProps) {
         )}
 
         {hasPersonal && personal?.greeting && (
-          <div style={{ fontFamily: serif, fontStyle: "italic", fontSize: 40 * k, color: accent, marginTop: 26 * k }}>
+          <div style={{ fontFamily: serif, fontStyle: "italic",  color: accent, marginTop: 26 * k, ...fitText(personal.greeting, 40 * k, 2) }}>
             {personal.greeting}
           </div>
         )}
@@ -276,18 +278,18 @@ export function MihrabDaily(props: TemplateProps) {
       )}
 
         {hasPersonal && personal?.dua && (
-          <div style={{ fontFamily: serif, fontStyle: "italic", fontSize: 30 * k, opacity: 0.85, marginTop: 18 * k, maxWidth: "100%", overflowWrap: "anywhere" }}>
+          <div style={{ fontFamily: serif, fontStyle: "italic",  opacity: 0.85, marginTop: 18 * k, maxWidth: "100%", overflowWrap: "anywhere", ...fitText(personal.dua, 30 * k, 3) }}>
             {personal.dua}
           </div>
         )}
         {masjid && org?.tagline && (
-          <div style={{ fontSize: 26 * k, color: accent, marginTop: 14 * k }}>{org.tagline}</div>
+          <div style={{ color: accent, marginTop: 14 * k, ...fitText(org.tagline, 26 * k, 2) }}>{org.tagline}</div>
         )}
 
         <div style={{ marginTop: 18 * k, fontSize: 22 * k, color: alpha(theme.fg, 0.55), letterSpacing: "0.06em" }} dir="ltr">
           {methodText(monthly)}
         </div>
-      </div>
+      </FitColumn>
     </div>
   );
 }
@@ -327,7 +329,7 @@ export function MihrabMonthly(props: TemplateProps) {
             {masjid && org?.address ? ` · ${org.address}` : ""}
           </div>
           {!masjid && personal?.greeting && (
-            <div style={{ fontFamily: serif, fontStyle: "italic", fontSize: 26, color: accent, marginTop: 6 }}>{personal.greeting}</div>
+            <div style={{ fontFamily: serif, fontStyle: "italic",  color: accent, marginTop: 6, ...fitText(personal.greeting, 26, 2) }}>{personal.greeting}</div>
           )}
         </div>
       </header>
@@ -352,9 +354,9 @@ export function MihrabMonthly(props: TemplateProps) {
 
       <footer style={{ marginTop: 14, textAlign: "center" }}>
         {!masjid && personal?.dua && (
-          <div style={{ fontFamily: serif, fontStyle: "italic", fontSize: 22, opacity: 0.85, marginBottom: 6 }}>{personal.dua}</div>
+          <div style={{ fontFamily: serif, fontStyle: "italic",  opacity: 0.85, marginBottom: 6, ...fitText(personal.dua, 22, 2) }}>{personal.dua}</div>
         )}
-        {masjid && org?.tagline && <div style={{ fontSize: 20, color: accent, marginBottom: 6 }}>{org.tagline}</div>}
+        {masjid && org?.tagline && <div style={{ color: accent, marginBottom: 6, ...fitText(org.tagline, 20, 2) }}>{org.tagline}</div>}
         <div dir="ltr" style={{ fontSize: 16, color: alpha(theme.fg, 0.55), letterSpacing: "0.06em" }}>
           {methodText(monthly)}
         </div>
@@ -388,7 +390,7 @@ export function MihrabYear(props: TemplateProps) {
           <div style={{ fontFamily: serif, fontWeight: 600, fontSize: 44, lineHeight: 1.05 }}>
             {place} · {toNumerals(String(state.year), numerals)}
           </div>
-          <div style={{ color: accent, letterSpacing: "0.18em", fontSize: 14, textTransform: "uppercase", marginTop: 6 }}>
+          <div style={{ color: accent, letterSpacing: "0.18em",  textTransform: "uppercase", marginTop: 6, fontSize: 14, overflowWrap: "anywhere" }}>
             {span ? toNumerals(span, numerals) : label("prayerTimetable", lang)}
             {masjid && org?.address ? ` · ${org.address}` : ""}
             {!masjid && personal?.greeting ? ` · ${personal.greeting}` : ""}
@@ -419,7 +421,7 @@ export function MihrabYear(props: TemplateProps) {
       />
 
       {!masjid && personal?.dua && (
-        <div style={{ marginTop: 8, textAlign: "center", fontFamily: serif, fontStyle: "italic", fontSize: 16, opacity: 0.85 }}>{personal.dua}</div>
+        <div style={{ marginTop: 8, textAlign: "center", fontFamily: serif, fontStyle: "italic",  opacity: 0.85, ...fitText(personal.dua, 16, 2) }}>{personal.dua}</div>
       )}
     </div>
   );
