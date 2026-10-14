@@ -20,7 +20,6 @@ import { ExportBar } from "./ExportBar";
 import { DesignStrip } from "./DesignStrip";
 import { DisclaimerText, ToolkitLinks } from "./SiteNotes";
 import { PANEL_META, PanelBody, type PanelId } from "./panels";
-import { Chip, dateChipLabel } from "./DesktopStudio";
 import { useStudio } from "./context";
 
 type Sheet = PanelId | "date" | "download" | "about";
@@ -39,6 +38,7 @@ const TABS: { id: PanelId; label: string; Icon: typeof PaletteIcon }[] = [
 ];
 
 const SHORT_DAY = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
+const SHORT_MONTH = new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric" });
 
 /**
  * The phone layout: the card fills the screen between a slim context bar
@@ -58,29 +58,34 @@ export function MobileStudio({ children }: { children: ReactNode }) {
         ? PANEL_META[sheet as PanelId]
         : SHEET_META[sheet as Exclude<Sheet, PanelId>];
 
+  // Short enough for one line on a 320px phone: "14 Oct", "Oct 2026", "2026".
   const dateLabel =
     state.format === "daily"
       ? SHORT_DAY.format(new Date(state.year, state.month - 1, state.day))
-      : dateChipLabel(state.format, state.year, state.month, state.day);
+      : state.format === "monthly"
+        ? SHORT_MONTH.format(new Date(state.year, state.month - 1, 1))
+        : String(state.year);
 
   return (
     <div className="flex h-svh flex-col overflow-hidden bg-[#f6f2e9] text-foreground">
       <header className="flex shrink-0 flex-col gap-2.5 border-b border-border bg-[#fffdf8] px-3.5 pt-2.5 pb-2.5">
-        <div className="flex items-center gap-2">
-          <Brand compact />
-          <div className="ml-auto flex min-w-0 items-center gap-1.5">
-            <Chip onClick={() => setSheet("place")} className="px-2.5 py-1 text-xs" aria-label={`Place: ${state.city}`}>
+        <div className="flex min-w-0 items-center gap-2">
+          <Brand compact narrow />
+          {/* Place and date: one pill, two halves, never wrapping */}
+          <div role="group" aria-label="Card place and date" className="ml-auto flex h-9 min-w-0 items-stretch overflow-hidden rounded-full border border-border bg-[#f6f2e9] text-xs font-semibold">
+            <button type="button" onClick={() => setSheet("place")} aria-label={`Place: ${state.city}`} className="flex min-w-0 cursor-pointer items-center gap-1.5 px-2.5 outline-none active:bg-[#ece5d6] focus-visible:bg-[#ece5d6]">
               <MapPinIcon className="size-3.5 shrink-0 text-muted-foreground" />
-              <span className="max-w-[6.5rem] truncate">{state.city}</span>
-            </Chip>
-            <Chip onClick={() => setSheet("date")} className="px-2.5 py-1 text-xs" aria-label="Date">
+              <span className="truncate whitespace-nowrap">{state.city}</span>
+            </button>
+            <span className="w-px shrink-0 bg-border" aria-hidden="true" />
+            <button type="button" onClick={() => setSheet("date")} aria-label="Date" className="flex shrink-0 cursor-pointer items-center gap-1.5 px-2.5 outline-none active:bg-[#ece5d6] focus-visible:bg-[#ece5d6]">
               <CalendarDaysIcon className="size-3.5 shrink-0 text-muted-foreground" />
-              {dateLabel}
-            </Chip>
-            <Button type="button" variant="ghost" size="icon-sm" aria-label="About Awqat" onClick={() => setSheet("about")}>
-              <InfoIcon />
-            </Button>
+              <span className="whitespace-nowrap">{dateLabel}</span>
+            </button>
           </div>
+          <Button type="button" variant="ghost" size="icon" aria-label="About Awqat" onClick={() => setSheet("about")} className="size-9 shrink-0">
+            <InfoIcon />
+          </Button>
         </div>
         <FormatTabs />
       </header>

@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { CheckIcon, MinusIcon, PlusIcon } from "lucide-react";
+import { useId, useState, type ReactNode } from "react";
+import { CheckIcon, ChevronDownIcon, MinusIcon, PlusIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -53,6 +53,7 @@ const NUMERAL_OPTIONS: { value: Lang; name: string }[] = [
   { value: "bn", name: "Bengali (০-৯)" },
   { value: "ar", name: "Arabic (٠-٩)" },
 ];
+const NUMERAL_SHORT: Record<Lang, string> = { en: "0-9", bn: "০-৯", ar: "٠-٩" };
 const LANGUAGE_ITEMS = Object.fromEntries(LANGUAGE_OPTIONS.map((o) => [o.value, o.name]));
 const NUMERAL_ITEMS = Object.fromEntries(NUMERAL_OPTIONS.map((o) => [o.value, o.name]));
 
@@ -66,14 +67,43 @@ export const PANEL_META: Record<PanelId, { title: string; hint: string }> = {
   place: { title: "Place", hint: "Times are calculated for this place." },
 };
 
-/** Small uppercase group label, as in the preview ("COLOUR THEME", "ORNAMENT"…). */
-export function GroupLabel({ children, className }: { children: ReactNode; className?: string }) {
+/**
+ * One settings group as a quiet card that opens and closes. The heading shows
+ * the current value ("Colour · Navy & Gold"), so a closed group still says
+ * what it's set to and the panel needs far less scrolling.
+ */
+export function Section({ title, value, children, defaultOpen = true }: { title: string; value?: ReactNode; children: ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const id = useId();
   return (
-    <p className={cn("mt-5 mb-2 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-muted-foreground first:mt-0", className)}>
-      {children}
-    </p>
+    <section className={cn("rounded-xl border border-border transition-colors", open ? "bg-[#fffefb]" : "bg-card")}>
+      <h3>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => setOpen((v) => !v)}
+          className="flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-xl px-3.5 text-left outline-none transition-colors hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="text-[0.86rem] font-semibold">{title}</span>
+          {value != null && <span className="ml-auto min-w-0 max-w-[58%] truncate text-xs text-muted-foreground">{value}</span>}
+          <ChevronDownIcon className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", value == null && "ml-auto", open && "rotate-180")} aria-hidden="true" />
+        </button>
+      </h3>
+      {open && (
+        <div id={id} className="flex flex-col gap-3 px-3.5 pt-1 pb-4">
+          {children}
+        </div>
+      )}
+    </section>
   );
 }
+
+/** On/off rows grouped in one bordered list. */
+function ToggleList({ children }: { children: ReactNode }) {
+  return <div className="divide-y divide-border/70 overflow-hidden rounded-lg border border-border/70 px-3">{children}</div>;
+}
+
 
 function ToggleRow({
   id,
@@ -89,7 +119,7 @@ function ToggleRow({
   hint?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5">
+    <div className="flex min-h-11 items-center justify-between gap-3 py-1.5">
       <div className="min-w-0">
         <Label htmlFor={id} className="text-[0.82rem] font-semibold">
           {children}
@@ -144,7 +174,9 @@ export function DesignsPanel() {
         })}
       </div>
 
-      <GroupLabel className="mt-6">Modes</GroupLabel>
+      <div className="mt-4">
+        <Section title="Modes" value={modesText(state)}>
+          <ToggleList>
       <ToggleRow
         id="masjid-switch"
         checked={state.masjid}
@@ -164,6 +196,9 @@ export function DesignsPanel() {
       >
         Ramadan mode
       </ToggleRow>
+          </ToggleList>
+        </Section>
+      </div>
     </div>
   );
 }
@@ -232,8 +267,8 @@ export function StylePanel({ withModes = false }: { withModes?: boolean } = {}) 
   const activeTheme = resolveTheme(state.template, state.theme).id;
 
   return (
-    <div className="flex flex-col">
-      <GroupLabel>Colour theme</GroupLabel>
+    <div className="flex flex-col gap-3">
+      <Section title="Colour" value={resolveTheme(state.template, state.theme).name}>
       <div className="grid grid-cols-4 gap-2">
         {variants.map((t) => {
           const on = t.id === activeTheme;
@@ -258,10 +293,10 @@ export function StylePanel({ withModes = false }: { withModes?: boolean } = {}) 
         })}
       </div>
 
-      <GroupLabel>Accent colour</GroupLabel>
       <AccentField />
+      </Section>
 
-      <GroupLabel>Ornament</GroupLabel>
+      <Section title="Ornament" value={MOTIFS.find((m) => m.id === state.motif)?.name ?? "None"}>
       <div className="grid grid-cols-5 gap-2">
         <button
           type="button"
@@ -296,13 +331,18 @@ export function StylePanel({ withModes = false }: { withModes?: boolean } = {}) 
         })}
       </div>
 
-      <GroupLabel>Background</GroupLabel>
-      <BackgroundField />
+      </Section>
 
-      <GroupLabel>Corner radius</GroupLabel>
-      <RadiusField />
+      <Section title="Background" value={state.bgImage ? "Photo" : state.gradient ? "Gradient" : "None"} defaultOpen={false}>
+        <BackgroundField />
+      </Section>
 
-      <GroupLabel>Show on card</GroupLabel>
+      <Section title="Corner radius" value={`${state.radius ?? 0} px`}>
+        <RadiusField />
+      </Section>
+
+      <Section title="Show on card" value={`${[state.showFasting, state.showArabic, state.showNext, state.showRows.sunrise !== false].filter(Boolean).length} of 4`}>
+      <ToggleList>
       <ToggleRow id="show-fasting" checked={state.showFasting} onChange={(v) => updateState({ showFasting: v })}>
         Sehri &amp; Iftar
       </ToggleRow>
@@ -319,10 +359,12 @@ export function StylePanel({ withModes = false }: { withModes?: boolean } = {}) 
       >
         Sunrise row
       </ToggleRow>
+      </ToggleList>
+      </Section>
 
       {withModes && (
-        <>
-          <GroupLabel>Modes</GroupLabel>
+        <Section title="Modes" value={modesText(state)}>
+          <ToggleList>
           <ToggleRow id="masjid-switch-m" checked={state.masjid} onChange={(v) => updateState({ masjid: v })} hint="Logo, name and address on the card.">
             Masjid mode
           </ToggleRow>
@@ -337,7 +379,8 @@ export function StylePanel({ withModes = false }: { withModes?: boolean } = {}) 
           >
             Ramadan mode
           </ToggleRow>
-        </>
+          </ToggleList>
+        </Section>
       )}
     </div>
   );
@@ -348,8 +391,8 @@ export function StylePanel({ withModes = false }: { withModes?: boolean } = {}) 
 export function TextPanel() {
   const { state, updateState } = useStudio();
   return (
-    <div className="flex flex-col">
-      <GroupLabel>Language</GroupLabel>
+    <div className="flex flex-col gap-3">
+      <Section title="Language" value={`${LANGUAGE_ITEMS[state.lang]} · ${NUMERAL_SHORT[state.numerals]}`}>
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="lang-select" className="text-xs font-normal text-muted-foreground">
@@ -387,18 +430,34 @@ export function TextPanel() {
         </div>
       </div>
 
-      <GroupLabel>{state.masjid ? "Masjid details" : "Your words"}</GroupLabel>
-      <PersonalizeFields />
-      {!state.masjid && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Making it for a mosque? Turn on <span className="font-semibold text-foreground">Masjid mode</span> in Designs.
-        </p>
-      )}
+      </Section>
+
+      <Section title={state.masjid ? "Masjid details" : "Your words"} value={wordsText(state)}>
+        <PersonalizeFields />
+        {!state.masjid && (
+          <p className="text-xs text-muted-foreground">
+            Making it for a mosque? Turn on <span className="font-semibold text-foreground">Masjid mode</span> in Designs.
+          </p>
+        )}
+      </Section>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
+
+function hijriAdjustText(n: number) {
+  return n === 0 ? "As calculated" : `${n > 0 ? "+" : "−"}${Math.abs(n)} day${Math.abs(n) > 1 ? "s" : ""}`;
+}
+
+function modesText(s: { masjid: boolean; ramadan: boolean }) {
+  return [s.masjid && "Masjid", s.ramadan && "Ramadan"].filter(Boolean).join(" · ") || "Off";
+}
+
+function wordsText(s: { masjid: boolean; org?: { name?: string }; personal?: { greeting?: string; dua?: string } }) {
+  if (s.masjid) return s.org?.name || "Not added";
+  return s.personal?.greeting || s.personal?.dua || "Not added";
+}
 
 /** Moves every Hijri date a day or two for local moon sighting. */
 function HijriAdjustField() {
@@ -407,7 +466,7 @@ function HijriAdjustField() {
   const set = (v: number) => updateState({ hijriAdjust: Math.max(HIJRI_ADJUST_MIN, Math.min(HIJRI_ADJUST_MAX, v)) });
   const iso = monthly?.days.find((d) => d.dateISO.slice(8, 10) === String(state.day).padStart(2, "0"))?.dateISO;
   const h = iso ? hijriFor(iso, n) : null;
-  const words = n === 0 ? "As calculated" : `${n > 0 ? "+" : "−"}${Math.abs(n)} day${Math.abs(n) > 1 ? "s" : ""}`;
+  const words = hijriAdjustText(n);
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -432,19 +491,24 @@ function HijriAdjustField() {
 export function TimesPanel() {
   const { state, updateState } = useStudio();
   return (
-    <div className="flex flex-col">
-      <GroupLabel>Calculation</GroupLabel>
-      <CalculationFields />
+    <div className="flex flex-col gap-3">
+      <Section title="Calculation" value={`${(state.method ?? "Auto").replace(/([a-z])([A-Z])/g, "$1 $2")} · ${state.madhab === "hanafi" ? "Hanafi" : "Shafi"}`}>
+        <CalculationFields />
+      </Section>
 
-      <GroupLabel>Hijri date</GroupLabel>
-      <HijriAdjustField />
+      <Section title="Hijri date" value={hijriAdjustText(state.hijriAdjust ?? 0)}>
+        <HijriAdjustField />
+      </Section>
 
-      <GroupLabel>Clock</GroupLabel>
-      <ToggleRow id="hour12-switch" checked={state.hour12} onChange={(v) => updateState({ hour12: v })}>
-        12-hour clock
-      </ToggleRow>
+      <Section title="Clock" value={state.hour12 ? "12-hour" : "24-hour"}>
+        <ToggleList>
+          <ToggleRow id="hour12-switch" checked={state.hour12} onChange={(v) => updateState({ hour12: v })}>
+            12-hour clock
+          </ToggleRow>
+        </ToggleList>
+      </Section>
 
-      <GroupLabel>Prayer rows</GroupLabel>
+      <Section title="Prayer rows" value={`${PRAYER_ROW_KEYS.filter((k) => state.showRows[k] !== false).length} of ${PRAYER_ROW_KEYS.length}`}>
       <div className="grid grid-cols-3 gap-1.5">
         {PRAYER_ROW_KEYS.map((key) => {
           const shown = state.showRows[key] !== false;
@@ -455,7 +519,7 @@ export function TimesPanel() {
               aria-pressed={shown}
               onClick={() => updateState({ showRows: { ...state.showRows, [key]: !shown } })}
               className={cn(
-                "flex items-center justify-center rounded-md border px-2 py-1.5 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                "flex items-center justify-center min-h-10 cursor-pointer rounded-md border px-2 py-1.5 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                 shown
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
@@ -466,14 +530,16 @@ export function TimesPanel() {
           );
         })}
       </div>
+      </Section>
 
       {templateShowsQibla(state) && (
-        <>
-          <GroupLabel>Extras</GroupLabel>
-          <ToggleRow id="qibla-switch" checked={state.showQibla} onChange={(v) => updateState({ showQibla: v })}>
-            Show Qibla
-          </ToggleRow>
-        </>
+        <Section title="Qibla" value={state.showQibla ? "On card" : "Off"}>
+          <ToggleList>
+            <ToggleRow id="qibla-switch" checked={state.showQibla} onChange={(v) => updateState({ showQibla: v })} hint="Direction and distance to Makkah.">
+              Show Qibla
+            </ToggleRow>
+          </ToggleList>
+        </Section>
       )}
     </div>
   );

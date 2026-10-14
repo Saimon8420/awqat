@@ -1,17 +1,22 @@
 import { useState, type ReactNode } from "react";
 import {
   CalendarDaysIcon,
+  CheckIcon,
   ChevronDownIcon,
   ClockIcon,
   DownloadIcon,
   InfoIcon,
   LayoutTemplateIcon,
+  LinkIcon,
   MapPinIcon,
   MinusIcon,
+  MoonStarIcon,
   PaletteIcon,
   PlusIcon,
+  RotateCcwIcon,
   TypeIcon,
 } from "lucide-react";
+import { hijriMonthShort } from "@/templates/designs/common";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -83,100 +88,173 @@ function ZoomControl() {
  * top bar.
  */
 export function DesktopStudio({ children }: { children: ReactNode }) {
-  const { state } = useStudio();
+  const { state, updateState, setRamadanTouched, monthly } = useStudio();
   const [panel, setPanel] = useState<PanelId>("style");
+  const [copied, setCopied] = useState(false);
   const [placeOpen, setPlaceOpen] = useState(false);
   const exporter = useExporter();
 
+  const hijri = state.format === "daily" ? monthly?.days.find((d) => Number(d.dateISO.slice(8, 10)) === state.day)?.hijri : undefined;
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // clipboard blocked: nothing to do
+    }
+  };
+  const resetStyle = () =>
+    updateState({ accent: "", motif: undefined, gradient: undefined, bgImage: undefined, bgDim: undefined, bgBlur: undefined, radius: undefined });
+
   return (
-    <div className="grid h-svh grid-cols-[72px_300px_minmax(0,1fr)] grid-rows-[60px_minmax(0,1fr)_118px] overflow-hidden bg-[#f6f2e9] text-foreground">
-      {/* Top bar */}
-      <header className="col-span-3 flex min-w-0 items-center gap-2.5 border-b border-border bg-[#fffdf8] px-4">
-        <Brand compact />
-        <span className="mx-1 h-6 w-px shrink-0 bg-border" aria-hidden="true" />
+    <div className="grid h-svh grid-cols-[76px_340px_minmax(0,1fr)] grid-rows-[64px_minmax(0,1fr)_118px] overflow-hidden bg-[#f6f2e9] text-foreground">
+      {/* Top bar: who / what card / format / live status + download */}
+      <header className="col-span-3 grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-border bg-[#fffdf8] px-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex shrink-0 items-center border-r border-border pr-4">
+            <Brand compact />
+          </div>
+          {/* Place and date: one pill, two halves */}
+          <div role="group" aria-label="Card place and date" className="flex h-10 min-w-0 items-stretch overflow-hidden rounded-full border border-border bg-[#f6f2e9]">
+            <Popover open={placeOpen} onOpenChange={setPlaceOpen}>
+              <PopoverTrigger
+                render={<button type="button" aria-label={`Place: ${state.city}`} className="flex min-w-0 cursor-pointer items-center gap-2 px-3.5 text-sm font-semibold outline-none transition-colors hover:bg-[#ece5d6] focus-visible:bg-[#ece5d6]" />}
+              >
+                <MapPinIcon className="size-4 shrink-0 text-muted-foreground" />
+                <span className="max-w-[10rem] whitespace-nowrap">{state.city}</span>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-80">
+                <LocationBar hideLabel />
+              </PopoverContent>
+            </Popover>
+            <span className="w-px shrink-0 bg-border" aria-hidden="true" />
+            <Popover>
+              <PopoverTrigger
+                render={<button type="button" aria-label="Date" className="flex min-w-0 cursor-pointer items-center gap-2 px-3.5 text-sm font-semibold outline-none transition-colors hover:bg-[#ece5d6] focus-visible:bg-[#ece5d6]" />}
+              >
+                <CalendarDaysIcon className="size-4 shrink-0 text-muted-foreground" />
+                <span className="whitespace-nowrap">{dateChipLabel(state.format, state.year, state.month, state.day)}</span>
+                {hijri && (
+                  <span className="hidden shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[0.7rem] font-semibold whitespace-nowrap text-primary 2xl:inline">
+                    {hijri.day} {hijriMonthShort(hijri.monthName)}
+                  </span>
+                )}
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-auto min-w-64 p-3">
+                <DateControls inline />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
 
-        <Popover open={placeOpen} onOpenChange={setPlaceOpen}>
-          <PopoverTrigger render={<Chip aria-label={`Place: ${state.city}`} />}>
-            <MapPinIcon className="size-3.5 shrink-0 text-muted-foreground" />
-            <span className="max-w-[11rem] truncate">{state.city}</span>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-80">
-            <LocationBar hideLabel />
-          </PopoverContent>
-        </Popover>
+        <FormatTabs className="w-[13.5rem] 2xl:w-[17rem]" />
 
-        <Popover>
-          <PopoverTrigger render={<Chip aria-label="Date" />}>
-            <CalendarDaysIcon className="size-3.5 shrink-0 text-muted-foreground" />
-            <span className="truncate">{dateChipLabel(state.format, state.year, state.month, state.day)}</span>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-auto min-w-64 p-3">
-            <DateControls inline />
-          </PopoverContent>
-        </Popover>
-
-        <FormatTabs className="w-[15.5rem] shrink-0" />
-
-        <span className="flex-1" />
-
-        <NowChip className="hidden min-w-0 lg:inline-flex" />
-
-        <Popover>
-          <PopoverTrigger render={<Button type="button" variant="ghost" size="icon" aria-label="About Awqat" />}>
-            <InfoIcon />
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-80 text-xs">
-            <p className="font-serif text-base font-semibold text-foreground">About Awqat</p>
-            <DisclaimerText />
-            <ToolkitLinks />
-          </PopoverContent>
-        </Popover>
-
-        <Button type="button" variant="outline" onClick={exporter.handleDownloadPdf} disabled={exporter.busy}>
-          {exporter.pdfDownloading ? "Exporting…" : "PDF"}
-        </Button>
-        <Popover>
-          <PopoverTrigger render={<Button type="button" className="awqat-shimmer gap-1.5" />}>
-            <DownloadIcon />
-            Download
-            <ChevronDownIcon className="opacity-70" />
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-80">
-            <p className="font-serif text-base font-semibold">Download</p>
-            <p className="-mt-1.5 text-xs text-muted-foreground">What you see is what downloads.</p>
-            <ExportBar variant="sheet" />
-          </PopoverContent>
-        </Popover>
+        <div className="flex min-w-0 items-center justify-end gap-2">
+          <NowChip className="hidden min-w-0 xl:inline-flex" />
+          <Popover>
+            <PopoverTrigger render={<Button type="button" variant="ghost" size="icon" aria-label="About Awqat" className="size-10" />}>
+              <InfoIcon />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 text-xs">
+              <p className="font-serif text-base font-semibold text-foreground">About Awqat</p>
+              <DisclaimerText />
+              <ToolkitLinks />
+            </PopoverContent>
+          </Popover>
+          {/* One download button; the arrow holds PDF, all months and the options */}
+          <div className="awqat-shimmer flex h-10 shrink-0 overflow-hidden rounded-[11px] bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,.18)]">
+            <button
+              type="button"
+              onClick={exporter.handleDownload}
+              disabled={exporter.busy}
+              className="flex cursor-pointer items-center gap-2 px-4 text-sm font-bold outline-none transition-colors hover:bg-black/10 focus-visible:bg-black/15 disabled:cursor-wait disabled:opacity-70"
+            >
+              <DownloadIcon className="size-4" />
+              {exporter.downloading ? "Saving…" : "Download PNG"}
+            </button>
+            <Popover>
+              <PopoverTrigger
+                render={<button type="button" aria-label="More download options" className="flex cursor-pointer items-center border-l border-white/25 px-2.5 outline-none transition-colors hover:bg-black/10 focus-visible:bg-black/15" />}
+              >
+                <ChevronDownIcon className="size-4" />
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80">
+                <p className="font-serif text-base font-semibold">Download</p>
+                <p className="-mt-1.5 text-xs text-muted-foreground">What you see is what downloads.</p>
+                <ExportBar variant="sheet" />
+                <Button type="button" variant="outline" className="w-full gap-2" onClick={copyLink}>
+                  {copied ? <CheckIcon /> : <LinkIcon />}
+                  {copied ? "Link copied" : "Copy link to this card"}
+                </Button>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
       </header>
 
       {/* Icon rail */}
-      <nav aria-label="Studio panels" className="row-span-2 flex flex-col items-center gap-1 border-r border-border bg-[#fffdf8] pt-3">
-        {RAIL.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            type="button"
-            aria-pressed={panel === id}
-            onClick={() => setPanel(id)}
-            className={cn(
-              "flex w-14 flex-col items-center gap-1 rounded-xl py-2 text-[0.66rem] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-              panel === id ? "bg-accent text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-            )}
-          >
-            <Icon className="size-5" />
-            {label}
-          </button>
-        ))}
+      <nav aria-label="Studio panels" className="row-span-2 flex flex-col gap-1 border-r border-border bg-[#fffdf8] px-2 pt-2.5 pb-3">
+        {RAIL.map(({ id, label, Icon }) => {
+          const on = panel === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={on}
+              onClick={() => setPanel(id)}
+              className={cn(
+                "relative flex cursor-pointer flex-col items-center gap-1 rounded-xl py-2.5 text-[0.7rem] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                on ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+              )}
+            >
+              {on && <span aria-hidden="true" className="absolute top-3 bottom-3 -left-2 w-[3px] rounded-r-full bg-primary" />}
+              <Icon className="size-5" />
+              {label}
+            </button>
+          );
+        })}
+        <span className="flex-1" />
+        <button
+          type="button"
+          aria-pressed={state.ramadan}
+          title="Ramadan mode: Sehri and Iftar first"
+          onClick={() => {
+            setRamadanTouched(true);
+            updateState({ ramadan: !state.ramadan });
+          }}
+          className={cn(
+            "flex cursor-pointer flex-col items-center gap-1 rounded-xl py-2.5 text-[0.7rem] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+            state.ramadan ? "bg-[#c9a24b]/15 text-[#8a6a1f]" : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+          )}
+        >
+          <MoonStarIcon className="size-5" />
+          Ramadan
+        </button>
       </nav>
 
       {/* The one open panel */}
       <aside aria-label={PANEL_META[panel].title} className="row-span-2 flex min-h-0 flex-col border-r border-border bg-[#fffdf8]">
-        <div className="px-[18px] pt-[18px] pb-3">
-          <h2 className="font-serif text-lg font-semibold">{PANEL_META[panel].title}</h2>
-          <p className="text-xs text-muted-foreground">{PANEL_META[panel].hint}</p>
+        <div className="border-b border-border/60 px-5 pt-5 pb-3.5">
+          <h2 className="font-serif text-xl font-semibold">{PANEL_META[panel].title}</h2>
+          <p className="mt-0.5 text-[0.8rem] text-muted-foreground">{PANEL_META[panel].hint}</p>
         </div>
-        <div className="relative min-h-0 flex-1 overflow-y-auto px-[18px] pb-6">
+        <div className="relative min-h-0 flex-1 overflow-y-auto px-3.5 pt-3.5 pb-6 [scrollbar-width:thin]">
           <PanelBody id={panel} />
         </div>
+        {panel === "style" && (
+          <div className="flex gap-2 border-t border-border/60 px-3.5 py-3">
+            <Button type="button" variant="outline" className="h-10 flex-1 gap-1.5" onClick={resetStyle}>
+              <RotateCcwIcon />
+              Reset style
+            </Button>
+            <Button type="button" variant="outline" className="h-10 flex-1 gap-1.5" onClick={copyLink}>
+              {copied ? <CheckIcon /> : <LinkIcon />}
+              {copied ? "Copied" : "Copy link"}
+            </Button>
+          </div>
+        )}
       </aside>
 
       {/* Canvas */}

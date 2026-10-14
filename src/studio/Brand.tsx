@@ -1,10 +1,11 @@
+import { cn } from "@/lib/utils";
 /**
  * The studio's brand lockup: a gold-on-navy mihrab-arch mark (behind a slow
  * animated halo — see `.awqat-brand-glow` in index.css) beside the Awqat
  * wordmark. `compact` drops the tagline for the slim top bars. Chrome only;
  * never part of an export.
  */
-export function Brand({ compact = false }: { compact?: boolean } = {}) {
+export function Brand({ compact = false, narrow = false }: { compact?: boolean; narrow?: boolean } = {}) {
   return (
     <div className="flex shrink-0 items-center gap-2.5">
       <span className="awqat-brand-glow inline-flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-gradient-to-br from-[#132456] to-[#0a1330] ring-1 ring-[#c9a24b]/40">
@@ -16,10 +17,10 @@ export function Brand({ compact = false }: { compact?: boolean } = {}) {
           <path d="M27 15.5l.7 1.6 1.7.2-1.3 1.2.4 1.7-1.5-.9-1.5.9.4-1.7-1.3-1.2 1.7-.2.7-1.6Z" fill="#e6c976" />
         </svg>
       </span>
-      <div className="leading-tight">
+      <div className={cn("leading-tight", narrow && "max-[359px]:sr-only")}>
         <div className="flex items-baseline gap-1.5">
           <h1 className="font-serif text-lg font-semibold tracking-tight text-foreground">Awqat</h1>
-          <span className="font-arabic text-lg text-[#9a7b2f]">أوقات</span>
+          <span className={cn("font-arabic text-lg text-[#9a7b2f]", narrow && "hidden min-[400px]:inline")}>أوقات</span>
         </div>
         {!compact && <p className="text-xs text-muted-foreground">Prayer &amp; fasting timetables, made to share</p>}
       </div>

@@ -157,7 +157,7 @@ export function NowChip({ className }: { className?: string }) {
       aria-live="off"
       title={fast ? `${label(fast.key, state.lang)} in ${formatRemaining(fast.ms - now)}` : undefined}
       className={cn(
-        "inline-flex min-w-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-primary",
+        "inline-flex h-10 min-w-0 items-center gap-2 rounded-full bg-primary/10 px-3.5 text-[0.8rem] font-semibold text-primary",
         className,
       )}
     >
@@ -165,7 +165,7 @@ export function NowChip({ className }: { className?: string }) {
         <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary/60" />
         <span className="relative inline-flex size-2 rounded-full bg-primary" />
       </span>
-      <span className="truncate">
+      <span className="truncate whitespace-nowrap">
         {label(current.key, state.lang)} now
         {next && (
           <>
@@ -175,7 +175,7 @@ export function NowChip({ className }: { className?: string }) {
         )}
       </span>
       {fast && (
-        <span className="hidden items-center gap-1 border-l border-border pl-2 font-medium text-muted-foreground xl:inline-flex">
+        <span className="hidden items-center gap-1 border-l border-primary/25 pl-2 font-medium whitespace-nowrap text-primary/80 2xl:inline-flex">
           <FastIcon className="size-3.5 text-primary" aria-hidden="true" />
           {label(fast.key, state.lang)} {formatRemaining(fast.ms - now)}
         </span>
